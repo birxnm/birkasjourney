@@ -4,16 +4,20 @@ import Ielts from "./pages/Ielts";
 import Habits from "./pages/Habits";
 import Content from "./pages/Content";
 import Setup from "./pages/Setup";
+import Reminders from "./pages/Reminders";
+import { useReminderScheduler } from "./lib/notifications";
 
 const nav = [
   { to: "/", label: "Today", icon: "🏠", end: true },
   { to: "/ielts", label: "IELTS", icon: "📚" },
   { to: "/habits", label: "Habits", icon: "💪" },
+  { to: "/reminders", label: "Alerts", icon: "🔔" },
   { to: "/content", label: "Brand", icon: "🚀" },
   { to: "/setup", label: "Block", icon: "🔒" },
 ];
 
 export default function App() {
+  useReminderScheduler();
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col">
       <main className="flex-1 px-4 pb-24 pt-6">
@@ -21,6 +25,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/ielts" element={<Ielts />} />
           <Route path="/habits" element={<Habits />} />
+          <Route path="/reminders" element={<Reminders />} />
           <Route path="/content" element={<Content />} />
           <Route path="/setup" element={<Setup />} />
         </Routes>

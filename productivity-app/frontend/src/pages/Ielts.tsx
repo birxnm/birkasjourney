@@ -29,13 +29,16 @@ export default function Ielts() {
   const [writing, setWriting] = useState<any[]>([]);
   const [speaking, setSpeaking] = useState<any[]>([]);
   const [errors, setErrors] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
 
+  const loadTasks = () => api.tasks().then(setTasks);
   const loadAll = () => {
     api.targets().then(setTargets);
     api.mocks().then(setMocks);
     api.writing().then(setWriting);
     api.speaking().then(setSpeaking);
     api.errors().then(setErrors);
+    loadTasks();
   };
   useEffect(loadAll, []);
 
@@ -61,7 +64,13 @@ export default function Ielts() {
       </div>
 
       {tab === "Overview" && (
-        <Overview targets={targets} mocks={mocks} onChange={loadAll} />
+        <Overview
+          targets={targets}
+          mocks={mocks}
+          tasks={tasks}
+          onChange={loadAll}
+          onTasksChange={loadTasks}
+        />
       )}
       {tab === "Writing" && (
         <WritingTab items={writing} onChange={() => api.writing().then(setWriting)} />
@@ -76,8 +85,10 @@ export default function Ielts() {
   );
 }
 
-function Overview({ targets, mocks, onChange }: any) {
+function Overview({ targets, mocks, tasks, onChange, onTasksChange }: any) {
   const [form, setForm] = useState({ listening: "8.5", reading: "9", writing: "6.5", speaking: "7" });
+  const [showTask, setShowTask] = useState(false);
+  const [taskForm, setTaskForm] = useState({ title: "", skill: "writing" });
 
   const submit = async () => {
     await api.addMock({
@@ -89,6 +100,22 @@ function Overview({ targets, mocks, onChange }: any) {
     onChange();
   };
 
+  const addTask = async () => {
+    if (!taskForm.title.trim()) return;
+    await api.addTask({ title: taskForm.title, skill: taskForm.skill });
+    setTaskForm({ title: "", skill: "writing" });
+    setShowTask(false);
+    onTasksChange();
+  };
+  const toggleTask = async (id: number) => {
+    await api.toggleTask(id);
+    onTasksChange();
+  };
+  const delTask = async (id: number) => {
+    await api.deleteTask(id);
+    onTasksChange();
+  };
+
   const chartData = mocks.map((m: any) => ({
     date: m.date.slice(5),
     overall: m.overall,
@@ -98,6 +125,64 @@ function Overview({ targets, mocks, onChange }: any) {
 
   return (
     <div>
+      <Section
+        title="Today's tasks"
+        right={
+          <button className="btn-primary !px-2 !py-1" onClick={() => setShowTask((s) => !s)}>
+            {showTask ? "Close" : "+ Add"}
+          </button>
+        }
+      >
+        {showTask && (
+          <div className="card mb-2 space-y-2">
+            <input
+              className="input"
+              placeholder="Task title (e.g. Rewrite intro paragraph)"
+              value={taskForm.title}
+              onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+            />
+            <div className="flex gap-2">
+              <select
+                className="input"
+                value={taskForm.skill}
+                onChange={(e) => setTaskForm({ ...taskForm, skill: e.target.value })}
+              >
+                {Object.entries(skillMeta).map(([k, m]) => (
+                  <option key={k} value={k}>
+                    {m.emoji} {m.label}
+                  </option>
+                ))}
+              </select>
+              <button className="btn-primary" onClick={addTask}>
+                Add
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="space-y-2">
+          {tasks.map((t: any) => (
+            <div key={t.id} className="card flex items-center gap-3">
+              <button
+                onClick={() => toggleTask(t.id)}
+                className={`flex h-6 w-6 items-center justify-center rounded-full border ${
+                  t.done ? "border-brand bg-brand text-white" : "border-slate-500"
+                }`}
+              >
+                {t.done ? "✓" : ""}
+              </button>
+              <span className="text-lg">{skillMeta[t.skill]?.emoji || "📌"}</span>
+              <span className={`flex-1 text-sm ${t.done ? "text-slate-500 line-through" : ""}`}>
+                {t.title}
+              </span>
+              <button onClick={() => delTask(t.id)} className="text-slate-500 hover:text-rose-400">
+                ✕
+              </button>
+            </div>
+          ))}
+          {tasks.length === 0 && <p className="text-sm text-slate-500">No tasks today. Add one!</p>}
+        </div>
+      </Section>
+
       <Section title="Band targets">
         <div className="card space-y-3">
           {targets.map((t: any) => {

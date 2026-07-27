@@ -7,7 +7,7 @@ from datetime import date, timedelta
 
 from sqlmodel import Session, select
 
-from .models import IeltsTarget, StudyTask
+from .models import Habit, IeltsTarget, Reminder, StudyTask
 
 EXAM_DATE = date(2026, 8, 29)
 
@@ -58,6 +58,18 @@ WEEKLY_PLAN = {
 
 def seed(session: Session, *, today: date | None = None, force: bool = False) -> dict:
     today = today or date.today()
+
+    # --- Habits ---
+    if not session.exec(select(Habit)).first():
+        session.add(Habit(name="gym", emoji="🏋️", weekly_target=3))
+        session.add(Habit(name="pilates", emoji="🧘", weekly_target=2))
+
+    # --- Default reminders ---
+    if not session.exec(select(Reminder)).first():
+        session.add(Reminder(time="08:00", purpose="Drink water + morning routine", category="water"))
+        session.add(Reminder(time="10:00", purpose="IELTS Writing / Speaking practice", category="ielts"))
+        session.add(Reminder(time="20:00", purpose="Instagram unlocked — content creation time 🚀", category="content"))
+        session.add(Reminder(time="23:00", purpose="Wind down — sleep on schedule", category="sleep"))
 
     # --- Targets ---
     existing_targets = session.exec(select(IeltsTarget)).all()

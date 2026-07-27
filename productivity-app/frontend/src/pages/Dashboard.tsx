@@ -151,7 +151,7 @@ export default function Dashboard() {
           {Object.entries(data.habits).map(([type, h]: any) => (
             <div key={type}>
               <div className="mb-1 flex justify-between text-sm capitalize">
-                <span>{type === "gym" ? "🏋️ Gym" : "🧘 Pilates"}</span>
+                <span>{h.emoji} {type}</span>
                 <span className="text-slate-400">
                   {h.done}/{h.target}
                 </span>

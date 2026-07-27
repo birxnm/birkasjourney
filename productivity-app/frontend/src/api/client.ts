@@ -31,6 +31,10 @@ export const api = {
   habits: () => req("/habits"),
   toggleHabit: (type: string) =>
     req(`/habits/toggle${qs({ type })}`, { method: "POST" }),
+  addHabit: (name: string, emoji: string, weekly_target: number) =>
+    req(`/habits${qs({ name, emoji, weekly_target })}`, { method: "POST" }),
+  deleteHabit: (name: string) =>
+    req(`/habits/${encodeURIComponent(name)}`, { method: "DELETE" }),
 
   // Sleep
   sleepList: () => req("/sleep"),
@@ -43,6 +47,9 @@ export const api = {
   updateTarget: (skill: string, current_band: number) =>
     req(`/ielts/targets/${skill}${qs({ current_band })}`, { method: "PATCH" }),
   tasks: (date?: string) => req(`/ielts/tasks${date ? qs({ date }) : ""}`),
+  addTask: (p: Record<string, any>) =>
+    req(`/ielts/tasks${qs(p)}`, { method: "POST" }),
+  deleteTask: (id: number) => req(`/ielts/tasks/${id}`, { method: "DELETE" }),
   toggleTask: (id: number) =>
     req(`/ielts/tasks/${id}/toggle`, { method: "POST" }),
   writing: () => req("/ielts/writing"),
@@ -67,4 +74,12 @@ export const api = {
     req(`/content${qs(p)}`, { method: "POST" }),
   deleteContent: (id: number) => req(`/content/${id}`, { method: "DELETE" }),
   contentStreak: () => req("/content/streak"),
+
+  // Reminders
+  reminders: () => req("/reminders"),
+  addReminder: (time: string, purpose: string, category: string) =>
+    req(`/reminders${qs({ time, purpose, category })}`, { method: "POST" }),
+  toggleReminder: (id: number) =>
+    req(`/reminders/${id}/toggle`, { method: "POST" }),
+  deleteReminder: (id: number) => req(`/reminders/${id}`, { method: "DELETE" }),
 };

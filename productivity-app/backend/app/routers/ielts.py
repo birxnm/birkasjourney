@@ -44,6 +44,35 @@ def tasks_for_day(date: Date | None = None, session: Session = Depends(get_sessi
     return session.exec(select(StudyTask).where(StudyTask.date == d)).all()
 
 
+@router.post("/tasks")
+def add_task(
+    title: str,
+    skill: str = "writing",
+    description: str = "",
+    date: Date | None = None,
+    session: Session = Depends(get_session),
+):
+    row = StudyTask(
+        date=date or Date.today(),
+        skill=skill,
+        title=title,
+        description=description,
+    )
+    session.add(row)
+    session.commit()
+    session.refresh(row)
+    return row
+
+
+@router.delete("/tasks/{task_id}")
+def delete_task(task_id: int, session: Session = Depends(get_session)):
+    row = session.get(StudyTask, task_id)
+    if row:
+        session.delete(row)
+        session.commit()
+    return {"deleted": task_id}
+
+
 @router.post("/tasks/{task_id}/toggle")
 def toggle_task(task_id: int, session: Session = Depends(get_session)):
     row = session.get(StudyTask, task_id)

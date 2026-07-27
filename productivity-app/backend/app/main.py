@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session
 
 from .database import create_db_and_tables, engine, get_session
-from .routers import content, dashboard, habits, ielts, sleep, water
+from .routers import content, dashboard, habits, ielts, reminders, sleep, water
 from .seed import seed
 
 
@@ -33,6 +33,7 @@ app.include_router(habits.router)
 app.include_router(water.router)
 app.include_router(sleep.router)
 app.include_router(content.router)
+app.include_router(reminders.router)
 
 
 @app.get("/api/health")

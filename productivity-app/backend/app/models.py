@@ -86,3 +86,18 @@ class ContentSession(SQLModel, table=True):
     platform: str
     description: str = ""
     minutes: int = 0
+
+
+class Habit(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)  # e.g. "gym", "pilates", "read"
+    emoji: str = "✅"
+    weekly_target: int = 3
+
+
+class Reminder(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    time: str  # "HH:MM" 24h
+    purpose: str
+    category: str = "general"  # ielts | habit | water | sleep | content | general
+    enabled: bool = True

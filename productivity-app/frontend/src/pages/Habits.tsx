@@ -18,6 +18,8 @@ export default function Habits() {
   const [waterStreak, setWaterStreak] = useState(0);
   const [sleep, setSleep] = useState<any[]>([]);
   const [sleepForm, setSleepForm] = useState({ bedtime: "23:30", wake_time: "07:00", quality: "4" });
+  const [showHabit, setShowHabit] = useState(false);
+  const [habitForm, setHabitForm] = useState({ name: "", emoji: "✅", weekly_target: "3" });
 
   const load = () => {
     api.habits().then((d) => setHabits(d.habits));
@@ -39,6 +41,17 @@ export default function Habits() {
     await api.logSleep(sleepForm.bedtime, sleepForm.wake_time, parseInt(sleepForm.quality));
     load();
   };
+  const addHabit = async () => {
+    if (!habitForm.name.trim()) return;
+    await api.addHabit(habitForm.name, habitForm.emoji || "✅", parseInt(habitForm.weekly_target) || 1);
+    setHabitForm({ name: "", emoji: "✅", weekly_target: "3" });
+    setShowHabit(false);
+    load();
+  };
+  const removeHabit = async (name: string) => {
+    await api.deleteHabit(name);
+    load();
+  };
 
   if (!habits || !water) return <div className="text-slate-400">Loading…</div>;
 
@@ -49,22 +62,53 @@ export default function Habits() {
     <div>
       <h1 className="mb-4 text-2xl font-bold">💪 Habits</h1>
 
-      <Section title="Movement this week">
+      <Section
+        title="Movement this week"
+        right={
+          <button className="btn-primary !px-2 !py-1" onClick={() => setShowHabit((s) => !s)}>
+            {showHabit ? "Close" : "+ Add"}
+          </button>
+        }
+      >
+        {showHabit && (
+          <div className="card mb-3 space-y-2">
+            <div className="flex gap-2">
+              <input
+                className="input w-16 text-center text-xl"
+                value={habitForm.emoji}
+                onChange={(e) => setHabitForm({ ...habitForm, emoji: e.target.value })}
+              />
+              <input
+                className="input flex-1"
+                placeholder="Habit name (e.g. reading, running)"
+                value={habitForm.name}
+                onChange={(e) => setHabitForm({ ...habitForm, name: e.target.value })}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="label mb-0 flex-1">Times per week</label>
+              <input
+                className="input w-20 text-center"
+                value={habitForm.weekly_target}
+                onChange={(e) => setHabitForm({ ...habitForm, weekly_target: e.target.value })}
+              />
+              <button className="btn-primary" onClick={addHabit}>
+                Add
+              </button>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
-          <HabitCard
-            emoji="🏋️"
-            name="Gym"
-            data={habits.gym}
-            done={habits.gym.dates.includes(todayISO)}
-            onToggle={() => toggle("gym")}
-          />
-          <HabitCard
-            emoji="🧘"
-            name="Pilates"
-            data={habits.pilates}
-            done={habits.pilates.dates.includes(todayISO)}
-            onToggle={() => toggle("pilates")}
-          />
+          {Object.entries(habits).map(([name, data]: any) => (
+            <HabitCard
+              key={name}
+              name={name}
+              data={data}
+              done={data.dates.includes(todayISO)}
+              onToggle={() => toggle(name)}
+              onDelete={() => removeHabit(name)}
+            />
+          ))}
         </div>
       </Section>
 
@@ -128,16 +172,21 @@ export default function Habits() {
   );
 }
 
-function HabitCard({ emoji, name, data, done, onToggle }: any) {
+function HabitCard({ name, data, done, onToggle, onDelete }: any) {
   return (
     <div className="card">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-2xl">{emoji}</span>
-        <span className="text-xs text-slate-400">
-          {data.done}/{data.target}
-        </span>
+        <span className="text-2xl">{data.emoji}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-400">
+            {data.done}/{data.target}
+          </span>
+          <button onClick={onDelete} className="text-xs text-slate-600 hover:text-rose-400">
+            ✕
+          </button>
+        </div>
       </div>
-      <div className="mb-1 text-sm font-medium">{name}</div>
+      <div className="mb-1 text-sm font-medium capitalize">{name}</div>
       <Bar value={data.done} max={data.target} />
       <button
         onClick={onToggle}
