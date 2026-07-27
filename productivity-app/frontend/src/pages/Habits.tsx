@@ -17,6 +17,7 @@ export default function Habits() {
   const [water, setWater] = useState<any>(null);
   const [waterStreak, setWaterStreak] = useState(0);
   const [sleep, setSleep] = useState<any[]>([]);
+  const [sleepStats, setSleepStats] = useState<any>(null);
   const [sleepForm, setSleepForm] = useState({ bedtime: "23:30", wake_time: "07:00", quality: "4" });
   const [showHabit, setShowHabit] = useState(false);
   const [habitForm, setHabitForm] = useState({ name: "", emoji: "✅", weekly_target: "3" });
@@ -26,6 +27,7 @@ export default function Habits() {
     api.water().then(setWater);
     api.waterStreak().then((d) => setWaterStreak(d.streak));
     api.sleepList().then(setSleep);
+    api.sleepStats().then(setSleepStats);
   };
   useEffect(load, []);
 
@@ -153,6 +155,46 @@ export default function Habits() {
           </div>
           <button className="btn-primary w-full" onClick={saveSleep}>Log sleep</button>
         </div>
+
+        {sleepStats && sleepStats.nights > 0 && (
+          <div className="card mt-3">
+            <div className="flex items-center gap-4">
+              <div className="text-center">
+                <div className="text-3xl font-black text-brand-light">
+                  {sleepStats.avg_hours ?? "—"}h
+                </div>
+                <div className="text-[10px] uppercase tracking-wide text-slate-400">
+                  weekly avg
+                </div>
+              </div>
+              <div className="h-10 w-px bg-slate-700" />
+              <div className="flex-1">
+                <div className="mb-1 flex items-baseline justify-between">
+                  <span className="text-sm text-slate-300">Consistency</span>
+                  <span className={`text-sm font-semibold ${scoreColor(sleepStats.consistency_score)}`}>
+                    {sleepStats.consistency_score != null
+                      ? `${sleepStats.consistency_score} · ${sleepStats.consistency_label}`
+                      : sleepStats.consistency_label}
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-700">
+                  <div
+                    className={`h-full rounded-full ${scoreBar(sleepStats.consistency_score)}`}
+                    style={{ width: `${sleepStats.consistency_score ?? 0}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            {sleepStats.avg_bedtime && (
+              <div className="mt-3 text-xs text-slate-400">
+                Typical schedule: 🌙 {sleepStats.avg_bedtime} → ☀️ {sleepStats.avg_wake} ·{" "}
+                {sleepStats.nights} night{sleepStats.nights === 1 ? "" : "s"} logged (target{" "}
+                {sleepStats.target_hours}h)
+              </div>
+            )}
+          </div>
+        )}
+
         {sleepChart.length > 0 && (
           <div className="card mt-3" style={{ height: 180 }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -170,6 +212,21 @@ export default function Habits() {
       </Section>
     </div>
   );
+}
+
+function scoreColor(s: number | null) {
+  if (s == null) return "text-slate-400";
+  if (s >= 85) return "text-green-400";
+  if (s >= 70) return "text-lime-400";
+  if (s >= 50) return "text-amber-400";
+  return "text-rose-400";
+}
+function scoreBar(s: number | null) {
+  if (s == null) return "bg-slate-500";
+  if (s >= 85) return "bg-green-500";
+  if (s >= 70) return "bg-lime-500";
+  if (s >= 50) return "bg-amber-500";
+  return "bg-rose-500";
 }
 
 function HabitCard({ name, data, done, onToggle, onDelete }: any) {

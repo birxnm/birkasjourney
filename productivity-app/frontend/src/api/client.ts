@@ -39,6 +39,7 @@ export const api = {
   // Sleep
   sleepList: () => req("/sleep"),
   sleepToday: () => req("/sleep/today"),
+  sleepStats: () => req("/sleep/stats"),
   logSleep: (bedtime: string, wake_time: string, quality: number) =>
     req(`/sleep${qs({ bedtime, wake_time, quality })}`, { method: "POST" }),
 
