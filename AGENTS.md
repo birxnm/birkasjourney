@@ -4,23 +4,25 @@ Rules for any AI coding agent (Cursor, Claude Code, Codex CLI, Windsurf) working
 this repository. These rules are **binding**. If a request conflicts with them, stop
 and flag the conflict instead of silently breaking a rule.
 
-This project is a personal **productivity bot** (task / project preparation) delivered
-as a Telegram bot. It is also my university final project, so it must satisfy the
-course rubric in `docs/requirements.md`. The reference engineering approach comes from
-Lecture 6 (Vibecoding a Telegram TODO bot) and is captured in `docs/architecture.md`.
+This project is **Birka's Journey**, a personal habit tracker with two front ends over
+one backend: a Telegram bot for logging on the move and a web dashboard for reviewing
+progress. It is also my university final project, so it must satisfy the course rubric
+in `requirements.md`. The reference engineering approach comes from Lecture 6
+(Vibecoding a Telegram TODO bot); the built system is captured in `architecture.md`.
 
 ---
 
 ## 1. Non-negotiables (the project fails the course without these)
 
 All of the following must be true in the finished project. Treat them as acceptance
-criteria, not suggestions. Full mapping in `docs/requirements.md`.
+criteria, not suggestions. Full mapping in `requirements.md`.
 
 - **Networking:** at least one real network call, with responses handled and errors
   caught. The Telegram Bot API (via aiogram polling) already counts as this. Empty /
   malformed responses must be handled, not crash.
 - **SQL storage:** an SQL database (SQLite) for persistent data. Data must survive an
-  app restart. At least one table; we use two related tables (`users`, `tasks`).
+  app restart. At least one table; we use six related tables — `users`, `habits`,
+  `habit_logs`, `reminders`, `quotes`, `daily_quotes`.
 - **≥ 5 meaningful user scenarios**, each with a precondition, user action, app action,
   expected result, and error/alternative paths.
 - **Input validation** on every user-provided value (empty, wrong type, wrong format,
@@ -32,7 +34,7 @@ criteria, not suggestions. Full mapping in `docs/requirements.md`.
 - **Secrets out of code:** `BOT_TOKEN`, API keys, and DB credentials live only in `.env`
   (git-ignored). A `.env.example` with no real values is committed.
 - **Layered project structure:** no single-file app. One responsibility per module.
-- **A manual QA checklist** (≥ 10 checks) — see `docs/qa-checklist.md` — filled in with
+- **A manual QA checklist** (≥ 10 checks) — see `qa-checklist.md` — filled in with
   real results before the demo.
 - **A `README.md`** that lets another developer run the project with no verbal help.
 
@@ -42,12 +44,16 @@ criteria, not suggestions. Full mapping in `docs/requirements.md`.
 
 - **Language:** Python 3.11+
 - **Bot framework:** `aiogram` (v3)
-- **Database:** SQLite via `aiosqlite` (async) — or stdlib `sqlite3` if kept simple
+- **Web API:** `FastAPI` + `uvicorn`, with `pydantic` schemas for request validation
+- **Database:** SQLite via `aiosqlite` (async) — no ORM
+- **Auth:** `PyJWT`, plus PBKDF2 password hashing from the standard library
+- **Frontend:** static HTML/CSS/vanilla JS; Chart.js from a CDN. No build step, no
+  frontend framework.
 - **Config:** `python-dotenv`
-- **Dependencies:** pinned in `requirements.txt`
+- **Dependencies:** pinned in `backend/requirements.txt`
 
-Do not add heavy dependencies (ORMs, web frameworks, message queues) for the MVP.
-Prefer the standard library and the packages above.
+Do not add heavy dependencies (ORMs, message queues, frontend build tooling). Prefer
+the standard library and the packages above.
 
 ---
 
@@ -56,29 +62,41 @@ Prefer the standard library and the packages above.
 Keep the command path layered and never mix layers:
 
 ```
-Telegram → handlers.py → services.py → database.py → SQLite
-           (parse/validate) (rules)    (SQL only)
+Telegram → bot/handlers.py ─┐
+                            ├→ services.py → database.py → SQLite
+Browser  → routers/*.py    ─┘  (rules)       (SQL only)
+   (parse/validate)
 ```
 
-| File               | Responsibility                                             |
-|--------------------|------------------------------------------------------------|
-| `main.py`          | Entry point: load config, init DB, start polling           |
-| `config.py`        | Read settings from environment (`BOT_TOKEN`, DB path, …)   |
-| `database.py`      | SQLite connection + parameterized SQL only                 |
-| `services.py`      | Business rules (validation, ownership checks, formatting)  |
-| `handlers.py`      | aiogram command handlers: parse input, call services       |
-| `keyboards.py`     | Inline / reply keyboards (buttons)                         |
-| `integrations.py`  | *(optional)* external API clients (weather, LLM, etc.)     |
-| `requirements.txt` | Pinned dependencies                                        |
-| `.env` / `.env.example` | Secrets (real / template)                             |
+Both front ends run in one process: `uvicorn main:app` serves the API and the static
+dashboard, and the FastAPI lifespan starts bot polling and the reminder scheduler.
+
+| File                     | Responsibility                                       |
+|--------------------------|------------------------------------------------------|
+| `main.py`                | Entry point: config, DB init, seeds, bot, scheduler   |
+| `config.py`              | Settings from environment (`BOT_TOKEN`, DB path, …)  |
+| `database.py`            | SQLite connection + parameterized SQL only           |
+| `services.py`            | Business rules (validation, progress, formatting)    |
+| `models.py`              | Pydantic schemas — web request/response validation   |
+| `auth.py`                | Password hashing, JWT, one-time link codes           |
+| `scheduler.py`           | Minute loop that pushes due reminders                |
+| `routers/*.py`           | FastAPI endpoints: parse input, call services        |
+| `bot/handlers.py`        | aiogram handlers: parse input, call services         |
+| `bot/keyboards.py`       | Inline keyboards (buttons)                           |
+| `bot/bot_services.py`    | Command parsing + Telegram formatting                |
+| `bot/runner.py`          | Bot lifecycle: build, poll, shut down                |
+| `tests/`                 | API, bot, and persistence test scripts               |
+| `requirements.txt`       | Pinned dependencies                                  |
+| `.env` / `.env.example`  | Secrets (real / template)                            |
 
 Rules:
-- Handlers must **not** contain SQL. Database code must **not** contain Telegram objects.
+- Handlers and routers must **not** contain SQL. Database code must **not** contain
+  Telegram or FastAPI objects.
 - Business rules (e.g. "reject empty title", "only the owner can delete") live in
   `services.py`, not scattered across handlers.
 - If a file grows past one clear responsibility, split it and tell me why.
 
-Full data model and SQL in `docs/architecture.md`.
+Full data model and SQL in `architecture.md`.
 
 ---
 
@@ -105,10 +123,11 @@ error handling, and asks for a plan before code. Mirror that precision back to m
 - **Parameterized SQL only.** Use `?` placeholders and pass values separately. Never
   build SQL with f-strings or string concatenation.
 - **Filter by owner on every query.** Reads, updates, and deletes on user data all
-  include `WHERE user_id = ?`. A task number from a command must never reach another
-  user's row.
-- **Validate before you persist.** Reject empty/blank titles, non-numeric IDs, and
-  actions on non-existent records *before* touching the database.
+  include `WHERE user_id = ?`. The `user_id` comes from the Telegram sender or the JWT
+  `sub` claim — never from a request body. An id from user input must never reach
+  another user's row.
+- **Validate before you persist.** Reject blank text, non-numeric values, out-of-range
+  values, and actions on non-existent records *before* touching the database.
 - **Async correctly.** aiogram v3 handlers are `async`; use `await` for all DB calls
   when using `aiosqlite`. Don't block the event loop.
 - **Small, named units.** Functions, files, and variables named for what they do.
@@ -157,7 +176,7 @@ A task is done only when:
 - [ ] The relevant validation and error paths are handled and tested.
 - [ ] User isolation holds (test with two different Telegram accounts where relevant).
 - [ ] No secrets entered code or git.
-- [ ] The matching rows in `docs/qa-checklist.md` are checked off with real results.
+- [ ] The matching rows in `qa-checklist.md` are checked off with real results.
 - [ ] `README.md` is updated if setup/usage changed.
 
 Do not mark a feature complete on the basis of generated code alone.
@@ -166,11 +185,13 @@ Do not mark a feature complete on the basis of generated code alone.
 
 ## 9. Reference documents (read before acting)
 
-- `docs/requirements.md` — the full course rubric as an acceptance spec + the ≥5
+- `requirements.md` — the full course rubric as an acceptance spec + the ≥5
   scenario template.
-- `docs/architecture.md` — data model, SQL schema, module map, command flows,
-  productivity-specific extensions.
-- `docs/qa-checklist.md` — the manual test checklist to fill in before the demo.
+- `architecture.md` — data model, SQL schema, module map, API reference, command flows,
+  error-handling map.
+- `scenarios.md` — the seven documented user scenarios with their error paths.
+- `qa-checklist.md` — the manual test checklist; automated rows carry their evidence.
+- `README.md` — launch instructions.
 
 ---
 
