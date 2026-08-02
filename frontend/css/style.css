@@ -47,6 +47,7 @@
 
 body {
   min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
   font-family: var(--font);
   color: var(--text);
   background: var(--bg-base);
@@ -136,7 +137,10 @@ a:hover { text-decoration: underline; }
 .container {
   max-width: 72rem;
   margin: 0 auto;
-  padding: calc(var(--space) * 1.5) var(--space) calc(var(--space) * 3);
+  padding: calc(var(--space) * 1.5)
+           max(var(--space), env(safe-area-inset-right))
+           calc(var(--space) * 3 + env(safe-area-inset-bottom))
+           max(var(--space), env(safe-area-inset-left));
 }
 
 .topbar {
@@ -156,7 +160,7 @@ a:hover { text-decoration: underline; }
   gap: var(--space);
 }
 
-.grid-stats { grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+.grid-stats { grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr)); }
 .grid-main { grid-template-columns: 1fr; }
 
 @media (min-width: 60rem) {
@@ -397,7 +401,7 @@ select option { background: #14142a; color: var(--text); }
 
 .chart-box {
   position: relative;
-  height: 17rem;
+  height: clamp(12rem, 45vw, 17rem);
 }
 
 .code-pill {
@@ -413,5 +417,92 @@ select option { background: #14142a; color: var(--text); }
 }
 
 .muted { color: var(--text-muted); font-size: 0.85rem; }
-.row { display: flex; gap: 0.5rem; align-items: flex-end; }
-.row > .field { flex: 1; margin-bottom: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; }
+.row > .field { flex: 1 1 8rem; margin-bottom: 0; }
+.row > .btn { flex: 0 0 auto; }
+
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+/*
+ * Three sizes: phone (< 40rem), tablet (40–60rem), desktop (≥ 60rem — the
+ * two-column .grid-main rule lives up with the layout section). Everything
+ * below is what changes away from the desktop default.
+ */
+
+/* Phones */
+@media (max-width: 40rem) {
+  :root {
+    --space: 0.85rem;
+    --radius: 14px;
+  }
+
+  .card { padding: var(--space); }
+
+  /* The header collapses to a title with the actions beneath it */
+  .topbar { gap: 0.6rem; }
+  .topbar h1 { font-size: 1.25rem; }
+  .topbar > div:last-child { width: 100%; }
+  .topbar .btn { flex: 1; }
+
+  .grid-stats { grid-template-columns: repeat(2, 1fr); }
+  .stat .value { font-size: 1.5rem; }
+  .stat .label { font-size: 0.7rem; }
+
+  /* Save button drops to its own full-width line under the two fields */
+  .row > .btn { flex: 1 1 100%; }
+
+  .card-title { flex-wrap: wrap; }
+  .card-title select { width: 100%; }
+
+  .habit { grid-template-columns: 1.75rem 1fr auto; gap: 0.6rem; }
+  .habit-name { font-size: 0.9rem; }
+
+  .auth-brand h1 { font-size: 1.6rem; }
+}
+
+/* Tablets — stats go 4-up, the main grid stays single column */
+@media (min-width: 40rem) and (max-width: 60rem) {
+  .grid-stats { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Wide desktops get a little more room */
+@media (min-width: 90rem) {
+  .container { max-width: 84rem; }
+}
+
+/*
+ * Touch devices: hover styling never applies, and every control needs a
+ * finger-sized hit area. 44px is the Apple/Android minimum.
+ */
+@media (hover: none) {
+  .btn, .tab, select, input {
+    min-height: 44px;
+  }
+  .btn-sm {
+    min-height: 38px;
+    padding: 0.45rem 0.75rem;
+  }
+  .habit-actions .btn {
+    min-width: 38px;
+  }
+  .btn:hover:not(:disabled) { background: var(--glass-bg); }
+  .btn-primary:hover:not(:disabled) { filter: none; }
+}
+
+/* Honour a reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Printing the dashboard for the report: drop the dark chrome */
+@media print {
+  body::before { display: none; }
+  body { background: #fff; color: #000; }
+  .card { border: 1px solid #ccc; box-shadow: none; background: #fff; }
+  .topbar .btn, .toast, #log-form, #reminder-form { display: none; }
+}
