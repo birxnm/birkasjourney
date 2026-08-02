@@ -192,18 +192,74 @@ async def get_user_by_id(user_id: int) -> Optional[dict]:
         await db.close()
 
 
-async def link_telegram_to_user(user_id: int, telegram_id: int) -> bool:
-    """Link a Telegram account to an existing web user."""
+async def link_telegram_to_user(user_id: int, telegram_id: int) -> str:
+    """
+    Attach a Telegram account to a web user.
+
+    A person who taps Start in the bot before registering on the web ends up with
+    two rows: a Telegram-only one and a web one. Linking merges the first into the
+    second rather than failing on the UNIQUE(telegram_id) constraint.
+
+    Returns one of:
+      "linked"   — the Telegram id is now on this web user
+      "merged"   — a Telegram-only account was absorbed, with its data
+      "already"  — this pair was already linked; nothing to do
+      "conflict" — the Telegram id belongs to a different, real account
+    """
     db = await get_db()
     try:
+        cursor = await db.execute(
+            "SELECT id, email, password_hash FROM users WHERE telegram_id = ?",
+            (telegram_id,),
+        )
+        holder = await cursor.fetchone()
+
+        if holder is None:
+            await db.execute(
+                "UPDATE users SET telegram_id = ? WHERE id = ?", (telegram_id, user_id)
+            )
+            await db.commit()
+            return "linked"
+
+        if holder["id"] == user_id:
+            return "already"
+
+        # A row with credentials is somebody's real account — never absorb it.
+        if holder["email"] or holder["password_hash"]:
+            return "conflict"
+
+        # Bot-only account: move its data across, then retire the row.
+        # UPDATE OR IGNORE skips rows the web user already has for that
+        # habit+date (or quote+date); those leftovers are deleted below.
+        old_id = holder["id"]
         await db.execute(
-            "UPDATE users SET telegram_id = ? WHERE id = ?",
-            (telegram_id, user_id),
+            "UPDATE OR IGNORE habit_logs SET user_id = ? WHERE user_id = ?",
+            (user_id, old_id),
+        )
+        await db.execute("DELETE FROM habit_logs WHERE user_id = ?", (old_id,))
+
+        await db.execute(
+            "UPDATE OR IGNORE reminders SET user_id = ? WHERE user_id = ?",
+            (user_id, old_id),
+        )
+        await db.execute("DELETE FROM reminders WHERE user_id = ?", (old_id,))
+
+        await db.execute(
+            "UPDATE OR IGNORE daily_quotes SET user_id = ? WHERE user_id = ?",
+            (user_id, old_id),
+        )
+        await db.execute("DELETE FROM daily_quotes WHERE user_id = ?", (old_id,))
+
+        await db.execute("DELETE FROM users WHERE id = ?", (old_id,))
+        await db.execute(
+            "UPDATE users SET telegram_id = ? WHERE id = ?", (telegram_id, user_id)
         )
         await db.commit()
-        return True
-    except aiosqlite.IntegrityError:
-        return False
+        return "merged"
+    except Exception as e:
+        await db.rollback()
+        logger.error("Failed to link telegram %s to user %s: %s", telegram_id, user_id, e)
+        raise
     finally:
         await db.close()
 

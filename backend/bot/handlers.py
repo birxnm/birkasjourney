@@ -10,6 +10,7 @@ import logging
 from datetime import date
 
 from aiogram import F, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, CommandObject, CommandStart
 from aiogram.types import CallbackQuery, Message
 
@@ -26,6 +27,26 @@ GENERIC_ERROR = (
     "⚠️ Something went wrong on my side. Nothing was saved.\n"
     "Please try again in a moment."
 )
+
+
+async def _safe_edit(
+    query: CallbackQuery, text: str, reply_markup=None, notice: str | None = None
+) -> None:
+    """
+    Replace a message's text, then clear the button's loading spinner.
+
+    Telegram rejects an edit whose content is byte-identical to what is already
+    on screen — which happens whenever the same menu button is tapped twice. That
+    is not an error worth showing anyone, so it is swallowed. The spinner is
+    cleared either way; without the answer() the button spins until it times out.
+    """
+    try:
+        await query.message.edit_text(text, reply_markup=reply_markup)
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e):
+            logger.warning("Could not edit message for %s: %s", query.from_user.id, e)
+    finally:
+        await query.answer(notice or None)
 
 
 async def _resolve_user(message_or_query) -> dict:
@@ -250,50 +271,53 @@ async def cmd_link(message: Message, command: CommandObject) -> None:
         return
 
     try:
-        linked = await db.link_telegram_to_user(web_user_id, message.from_user.id)
+        outcome = await db.link_telegram_to_user(web_user_id, message.from_user.id)
     except Exception as e:
         logger.error("link failed for %s: %s", message.from_user.id, e)
         await message.answer(GENERIC_ERROR)
         return
 
-    if not linked:
+    if outcome == "already":
         await message.answer(
-            "❌ This Telegram account is already linked to another web account."
+            "✅ This chat is already connected to that web account. Nothing to do."
         )
-        return
-
-    await message.answer(
-        "✅ Linked! Your bot logs and your dashboard now share the same data.\n\n"
-        "Try /today to see it."
-    )
+    elif outcome == "conflict":
+        await message.answer(
+            "❌ This Telegram account belongs to a different web account.\n\n"
+            "Log in on the dashboard with that account instead, or generate the code "
+            "from the account you want to use."
+        )
+    elif outcome == "merged":
+        await message.answer(
+            "✅ Linked! You had a separate bot-only account — I merged its entries "
+            "into your web account.\n\nTry /today to see everything in one place."
+        )
+    else:
+        await message.answer(
+            "✅ Linked! Your bot logs and your dashboard now share the same data.\n\n"
+            "Try /today to see it."
+        )
 
 
 # ─── Inline keyboard callbacks ───────────────────────────────────────────────
 
 @router.callback_query(F.data == "menu:root")
 async def cb_root(query: CallbackQuery) -> None:
-    await query.message.edit_text(
-        "What would you like to do?", reply_markup=keyboards.main_menu()
-    )
-    await query.answer()
+    await _safe_edit(query, "What would you like to do?", keyboards.main_menu())
 
 
 @router.callback_query(F.data == "menu:log")
 async def cb_log_menu(query: CallbackQuery) -> None:
-    await query.message.edit_text(
-        "Pick a habit to log 👇", reply_markup=keyboards.habit_picker()
-    )
-    await query.answer()
+    await _safe_edit(query, "Pick a habit to log 👇", keyboards.habit_picker())
 
 
 @router.callback_query(F.data.startswith("pick:"))
 async def cb_pick_habit(query: CallbackQuery) -> None:
     habit_name = query.data.split(":", 1)[1]
     label = keyboards.HABIT_LABELS.get(habit_name, habit_name)
-    await query.message.edit_text(
-        f"{label} — pick a value 👇", reply_markup=keyboards.value_picker(habit_name)
+    await _safe_edit(
+        query, f"{label} — pick a value 👇", keyboards.value_picker(habit_name)
     )
-    await query.answer()
 
 
 @router.callback_query(F.data.startswith("log:"))
@@ -317,11 +341,12 @@ async def cb_log_value(query: CallbackQuery) -> None:
         await query.answer("Could not save that. Please try again.", show_alert=True)
         return
 
-    await query.message.edit_text(
+    await _safe_edit(
+        query,
         bot_services.format_log_confirmation(result),
-        reply_markup=keyboards.main_menu(),
+        keyboards.main_menu(),
+        notice="Saved ✅",
     )
-    await query.answer("Saved ✅")
 
 
 @router.callback_query(F.data == "menu:today")
@@ -334,10 +359,9 @@ async def cb_today(query: CallbackQuery) -> None:
         await query.answer("Could not load that. Please try again.", show_alert=True)
         return
 
-    await query.message.edit_text(
-        services.format_today_summary(summary), reply_markup=keyboards.main_menu()
+    await _safe_edit(
+        query, services.format_today_summary(summary), keyboards.main_menu()
     )
-    await query.answer()
 
 
 @router.callback_query(F.data == "menu:quote")
@@ -355,8 +379,7 @@ async def cb_quote(query: CallbackQuery) -> None:
         if quotes
         else "💫 No quotes available right now — try again shortly."
     )
-    await query.message.edit_text(text, reply_markup=keyboards.main_menu())
-    await query.answer()
+    await _safe_edit(query, text, keyboards.main_menu())
 
 
 @router.callback_query(F.data == "menu:summary")
@@ -369,11 +392,9 @@ async def cb_summary(query: CallbackQuery) -> None:
         await query.answer("Could not load that. Please try again.", show_alert=True)
         return
 
-    await query.message.edit_text(
-        bot_services.format_week_summary(rows, days=7),
-        reply_markup=keyboards.main_menu(),
+    await _safe_edit(
+        query, bot_services.format_week_summary(rows, days=7), keyboards.main_menu()
     )
-    await query.answer()
 
 
 # ─── Fallback for unknown input ──────────────────────────────────────────────
