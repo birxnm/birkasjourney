@@ -88,18 +88,64 @@ below). And iOS will not install a web app over plain HTTP from some contexts; i
 Home Screen** gives you a plain bookmark instead of a fullscreen app, that's why, and
 hosting it over HTTPS fixes it.
 
-### Deploying it
+### Letting someone else use it
+
+Everything below `localhost` is single-machine. For anyone else — a family member on their
+own phone, on their own network — the app has to be reachable on the internet.
+
+Accounts already work for more than one person: every row of user data is scoped by
+`user_id`, so each person registers their own account, sees only their own habits, and
+links their own Telegram. Note that **registration is open** — anyone with the URL can
+create an account.
+
+#### A temporary link (about five minutes)
+
+Good for showing someone today, or for rehearsing the demo. The link dies when the tunnel
+stops, and it gets a new address each time.
+
+```bash
+brew install cloudflared
+cloudflared tunnel --url http://localhost:8000      # prints a https://….trycloudflare.com URL
+```
+
+Leave that running and keep `uvicorn` running in another terminal. The URL is HTTPS, which
+is also what makes **Add to Home Screen** install as a real app rather than a bookmark.
+
+#### A permanent deployment
 
 The app needs a **persistent process with a writable disk**: SQLite is a file on disk, the
 Telegram bot holds a long-polling connection, and `scheduler.py` runs a minute loop. All
-three are started by the FastAPI lifespan in `main.py` and all three need the process to
+three are started by the FastAPI lifespan in `main.py`, and all three need the process to
 stay alive between requests.
 
 That rules out serverless platforms — **Vercel, Netlify, and Lambda-style hosts cannot run
 this project as it stands.** Their functions are stateless and their filesystems are
 ephemeral, so the database would not survive, the bot would stop polling, and reminders
 would never fire. A container host with a mounted volume — Railway, Render, Fly.io, or any
-small VPS — runs it unchanged.
+small VPS — runs it unchanged from the `Dockerfile` at the repo root.
+
+On Railway, which needs no config file beyond that:
+
+1. Push this repo to GitHub.
+2. **New Project → Deploy from GitHub repo** and pick it. Railway finds the `Dockerfile`.
+3. **Variables** — add `BOT_TOKEN`, and a `JWT_SECRET` generated fresh for production:
+   ```bash
+   python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+   ```
+4. **Settings → Volumes** — add one mounted at `/data`. Without it every deploy starts from
+   an empty database. The `Dockerfile` already points `DB_PATH` at `/data/birkasjourney.db`.
+5. **Settings → Networking → Generate Domain**, then set `ALLOWED_ORIGINS` to that URL.
+
+Three things that matter whichever host you choose:
+
+- **Set `JWT_SECRET` yourself.** `config.py` falls back to `change-me-in-production`, and
+  anyone who knows that default can mint a valid token for any account. Use a different
+  value from your local one, and never commit either.
+- **Mount a volume for the database**, per step 4.
+- **Set `ALLOWED_ORIGINS`** to the deployed origin instead of leaving it `*`.
+
+Only one instance should run at a time: two processes polling the same bot token will
+fight over updates, and both would send every reminder.
 
 ### The app icons
 
