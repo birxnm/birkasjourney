@@ -63,6 +63,58 @@ Keep `uvicorn` running on port 8000 in another terminal — Vite proxies `/api` 
 the two behave as one origin. Run `npm run build` once more before you demo, so the
 version `uvicorn` serves is current.
 
+### Opening it on a phone
+
+The dashboard is an installable web app, so it can live on a phone's home screen and open
+without browser chrome.
+
+`localhost` on the phone means the phone itself, so use the computer's address on the
+network instead. Both devices must be on the same Wi-Fi (or the phone's hotspot):
+
+```bash
+# 1. Find the computer's address
+ipconfig getifaddr en0            # macOS, e.g. 192.168.1.24
+
+# 2. Serve on every interface, not just the loopback
+cd backend && uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Then open `http://<that-address>:8000` on the phone. In Safari, **Share → Add to Home
+Screen**; in Chrome, **⋮ → Add to Home screen**.
+
+Two things to know. The site is only reachable while the computer is awake and running
+`uvicorn` on the same network — for anything more permanent it needs a real host (see
+below). And iOS will not install a web app over plain HTTP from some contexts; if **Add to
+Home Screen** gives you a plain bookmark instead of a fullscreen app, that's why, and
+hosting it over HTTPS fixes it.
+
+### Deploying it
+
+The app needs a **persistent process with a writable disk**: SQLite is a file on disk, the
+Telegram bot holds a long-polling connection, and `scheduler.py` runs a minute loop. All
+three are started by the FastAPI lifespan in `main.py` and all three need the process to
+stay alive between requests.
+
+That rules out serverless platforms — **Vercel, Netlify, and Lambda-style hosts cannot run
+this project as it stands.** Their functions are stateless and their filesystems are
+ephemeral, so the database would not survive, the bot would stop polling, and reminders
+would never fire. A container host with a mounted volume — Railway, Render, Fly.io, or any
+small VPS — runs it unchanged.
+
+### The app icons
+
+`frontend/public/icon.svg` is the source. The PNGs beside it (32, 180, 192, 512) are
+rendered from it, so edit the SVG and re-render rather than editing the PNGs. Any tool
+that rasterises SVG will do:
+
+```bash
+# with rsvg-convert (brew install librsvg)
+cd frontend/public
+for s in 32:favicon-32 180:apple-touch-icon 192:icon-192 512:icon-512; do
+  rsvg-convert -w "${s%%:*}" -h "${s%%:*}" icon.svg -o "${s##*:}.png"
+done
+```
+
 ### Configuration
 
 `backend/.env` — never commit this file; `backend/.env.example` is the template.
