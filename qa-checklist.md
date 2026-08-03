@@ -134,6 +134,16 @@ unexpected console errors**.
 | 71 | Reachable from a phone | Start with `--host 0.0.0.0`, open `http://<computer-ip>:8000` on the phone | The dashboard loads with no console or network errors | ✅ pass — loaded over the LAN address at 390×844, no console or failed requests |
 | 72 | Add to Home Screen | On the phone, Share → Add to Home Screen | Installs as *Birka's Journey* with the lime mascot icon and opens without browser chrome | ☐ to verify on the device — needs HTTPS on some iOS versions |
 
+## H. Picking a reminder time
+
+| # | Check | Steps | Expected result | Result |
+|---|-------|-------|-----------------|--------|
+| 73 | Quick-pick sets the time | Tap **Evening** in the Reminders card | The field reads 18:00 and only that pick is marked selected | ✅ pass — input `18:00`, `aria-pressed` true on that one pick and false on the other three |
+| 74 | Typing clears the selection | Tap a pick, then type a different time into the field | No pick stays highlighted, since the value no longer matches one | ✅ pass — selection empty after typing 07:15 |
+| 75 | Display matches the device clock | Compare the field, the picks, and the saved list on a 12-hour locale | All three read the same way — no mixing 24-hour and AM/PM on one screen | ✅ pass — field `06:00 PM`, pick `6:00 PM`, saved list `6:00 PM`; all go through `formatClock()` |
+| 76 | Stored value stays 24-hour | Create a reminder from a pick, then read `GET /api/reminders` | `remind_at` is canonical `HH:MM` regardless of how it was displayed | ✅ pass — the **Morning** pick stored `08:00` on a 12-hour locale |
+| 77 | Layout adapts to its container | View the field on a phone card, the desktop sidebar, a tablet card, and the dialog | Four picks always land as 2×2 or one row of four — never three with one stranded | ✅ pass — 2×2 at 262/321/332/385px, four across at 741px; measured in 12-hour, 24-hour, and ru locales with ≥69px of text slack everywhere |
+
 ---
 
 ## Final MVP sign-off (the rubric's readiness gate)
@@ -146,7 +156,7 @@ unexpected console errors**.
       [architecture.md](architecture.md)
 - [x] Input validation on every user-provided value
 - [x] Error handling across all four categories — network, database, user, unexpected
-- [x] A manual QA checklist with ≥ 10 checks — this file, 72 rows
+- [x] A manual QA checklist with ≥ 10 checks — this file, 77 rows
 - [x] Launch instructions — [README.md](README.md)
 - [x] User isolation — every user-data query is scoped by `user_id`, including the
       habits a user creates

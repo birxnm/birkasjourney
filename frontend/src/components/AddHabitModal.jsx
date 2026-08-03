@@ -18,6 +18,7 @@ import CategorySelect from "./CategorySelect.jsx";
 import ColorPicker, { HABIT_COLORS } from "./ColorPicker.jsx";
 import IconPicker, { HABIT_ICONS } from "./IconPicker.jsx";
 import TargetDays from "./TargetDays.jsx";
+import TimeField from "./TimeField.jsx";
 import { useToast } from "./Toast.jsx";
 
 const DEFAULT_REMINDER = "09:00";
@@ -163,13 +164,13 @@ export default function AddHabitModal({ open, onOpenChange, onCreated }) {
               </div>
 
               {form.reminderOn && (
-                <input
-                  className="reminder-time"
-                  type="time"
-                  aria-label="Reminder time"
-                  value={form.reminderTime}
-                  onChange={(e) => set({ reminderTime: e.target.value })}
-                />
+                <div className="reminder-time">
+                  <TimeField
+                    label="Reminder time"
+                    value={form.reminderTime}
+                    onChange={(reminderTime) => set({ reminderTime })}
+                  />
+                </div>
               )}
             </div>
 
