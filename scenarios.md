@@ -1,9 +1,9 @@
 # User scenarios
 
-Seven scenarios in the rubric §5 shape: *name → participant → preconditions → main flow
-→ error cases → expected result*. The rubric requires at least five; the extra two cover
-the cross-platform linking and the reminder push, which are the parts a reviewer is most
-likely to probe.
+Eight scenarios in the rubric §5 shape: *name → participant → preconditions → main flow
+→ error cases → expected result*. The rubric requires at least five; the extras cover
+the cross-platform linking, the reminder push, and creating a habit of your own — the
+parts a reviewer is most likely to probe.
 
 ---
 
@@ -29,7 +29,7 @@ likely to probe.
 |-------|--------|
 | `/log` with no arguments | The inline habit picker opens instead of an error |
 | `/log water` | *"I need both a habit and a value"* plus the usage examples |
-| `/log pizza 1` | *"I don't track 'pizza'"* plus the list of valid habits |
+| `/log pizza 1` | *"Unknown habit: 'pizza'. You track: …"* — an unrecognised name is treated as one of the user's own habits and checked against the database, because only that tells us whether *this* user has it |
 | `/log water abc` | *"'abc' is not a number"* with a corrected example |
 | `/log water 999` | *"Value for water must be between 0 and 20"* |
 | Database unavailable | Logged internally; the user sees *"Nothing was saved. Please try again."* |
@@ -49,8 +49,9 @@ row rather than adding another.
 **Main flow**
 
 1. The user sends `/today`, taps **📊 Today**, or opens the dashboard.
-2. `services.get_today_summary` runs one owner-scoped `LEFT JOIN` so all six habits
-   come back whether or not they were logged.
+2. `services.get_today_summary` runs one owner-scoped `LEFT JOIN` so every habit the
+   user tracks — the built-in six plus their own — comes back whether or not it was
+   logged.
 3. Each logged habit gets a completion flag and a progress percentage.
 4. Telegram renders a text progress bar; the dashboard renders bars and stat tiles.
 
@@ -209,3 +210,45 @@ bedtime and wake-up shown as `HH:MM` rather than decimals.
 
 **Expected result:** habit logs, reminders, accounts, and today's quote assignments are
 all intact, and the seed data is not duplicated.
+
+---
+
+## 8. Add a habit of your own
+
+**Participant:** a logged-in web user.
+
+**Preconditions:** the app is running and the dashboard is built. The user has an
+account; they may or may not have created habits before.
+
+**Main flow**
+
+1. With no habits of their own yet, the user sees *"Track your first habit"* and presses
+   **+ Add Habit**.
+2. They type *Morning Run*, pick the 🏃 icon and the lime swatch, choose the
+   *Health & Fitness* category, set the target to 5 days a week, add the note
+   *"Before breakfast"*, switch **Reminder** on, and set 07:30.
+3. `POST /api/habits` validates the shape — name not blank, `target_days` 1–7, a known
+   category, a `#rrggbb` colour, a real `HH:MM` time.
+4. `services.create_habit_for_user` derives the storage name `morning_run`, checks the
+   user doesn't already have it, and writes the row with `user_id` set and
+   `kind = 'binary'`. The reminder is created in the same call.
+5. The habit appears in today's list with a **Mark done** button and under
+   *Your own habits*; the reminder shows in the sidebar.
+6. Tapping **Mark done** logs value 1 for today; the card reads `1/5 days this week`.
+
+**Error cases**
+
+| Input | Result |
+|-------|--------|
+| Name left blank | *"Give the habit a name first."* — nothing is sent |
+| A name they already use | 400 *"You already have a habit called 'Morning Run'."* |
+| `target_days` outside 1–7, an unknown category, or a colour that isn't `#rrggbb` | 422, rejected before the database |
+| A name with no Latin letters, e.g. *Пить воду* | Accepted; the storage name falls back to a stable digest, so adding it twice is still caught |
+| Another user guesses the habit's id and calls `PATCH` or `DELETE` | 404 — the SQL carries `WHERE user_id = ?`, so the row can never match |
+| The reminder fails to save | The habit is kept, the failure is logged, and the response reports no reminder rather than losing the habit |
+| Database unavailable | Logged internally; the user sees *"Could not save that habit. Please try again."* |
+
+**Expected result:** one `habits` row owned by that user, invisible to every other
+account, loggable from both the dashboard and `/log morning_run` in Telegram. Deleting
+it removes its logs and reminders with it. The six built-in habits are untouched and
+cannot be deleted by anyone.

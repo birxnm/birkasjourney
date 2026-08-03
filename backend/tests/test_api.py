@@ -76,8 +76,15 @@ with TestClient(main.app) as c:
     r = c.post("/api/habits/log", json={"habit_name":"water","value":1.0}, headers=ha)
     check("re-log overwrites (no dup)", r.status_code == 201 and r.json()["value"] == 1.0, r.text)
 
+    # A name the user doesn't have is a 400 from services, not a 422 from the
+    # schema: whether a habit exists depends on who is asking, now that users
+    # can create their own.
     r = c.post("/api/habits/log", json={"habit_name":"pizza","value":1}, headers=ha)
-    check("unknown habit -> 422", r.status_code == 422)
+    check("unknown habit -> 400", r.status_code == 400, r.text)
+    check("unknown habit lists what they do track",
+          "You track:" in r.json().get("detail", ""), r.text)
+    r = c.post("/api/habits/log", json={"habit_name":"not a slug!","value":1}, headers=ha)
+    check("malformed habit name -> 422", r.status_code == 422)
     r = c.post("/api/habits/log", json={"habit_name":"water","value":-5}, headers=ha)
     check("negative value -> 422", r.status_code == 422)
     r = c.post("/api/habits/log", json={"habit_name":"water","value":999}, headers=ha)

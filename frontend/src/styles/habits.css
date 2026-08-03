@@ -1,0 +1,679 @@
+/*
+ * habits.css — The entry pages, the Add Habit dialog, and the habit cards.
+ *
+ * Sizes here are fluid (clamp, auto-fit grids) rather than tied to breakpoints,
+ * so the same rules cover a phone, a tablet, and a desktop.
+ *
+ * The entry pages invert the light theme onto solid indigo: white and lime type
+ * on --indigo, with white cards floating on top. The dashboard stays on paper.
+ */
+
+/* ─── Entry pages: shared indigo canvas ───────────────────────────────────── */
+
+.entry {
+  position: relative; /* anchors .entry-toggle */
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  padding: clamp(1.25rem, 4vw, 2.5rem)
+           max(1rem, env(safe-area-inset-right))
+           calc(clamp(1.25rem, 4vw, 2.5rem) + env(safe-area-inset-bottom))
+           max(1rem, env(safe-area-inset-left));
+  color: #fff;
+  background: var(--indigo);
+}
+
+/*
+ * Scattered dots and outlines, as on the reference's onboarding screen. Purely
+ * decorative and behind everything, so it never intercepts a tap.
+ */
+.entry::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, var(--lime) 0 0.42rem, transparent 0.45rem),
+    radial-gradient(circle, var(--pink) 0 0.55rem, transparent 0.58rem),
+    radial-gradient(circle, var(--yellow) 0 0.34rem, transparent 0.37rem),
+    radial-gradient(circle, rgba(255, 255, 255, 0.5) 0 0.28rem, transparent 0.31rem);
+  background-repeat: no-repeat;
+  /* Each layer needs its own box, or a no-repeat gradient fills the whole
+     element and background-position has nothing left to move it within. */
+  background-size: 1.4rem 1.4rem, 1.8rem 1.8rem, 1.2rem 1.2rem, 1rem 1rem;
+  /* Held to the corners, clear of the centred column, so nothing ever lands on
+     top of a line of text. */
+  background-position: 5% 7%, 95% 11%, 92% 92%, 7% 90%;
+  opacity: 0.85;
+}
+
+/*
+ * A phone has no spare margin either side of the content, so there is nowhere
+ * for the dots to sit without colliding with it. The solid indigo carries the
+ * page on its own.
+ */
+@media (max-width: 40rem) {
+  .entry::before { display: none; }
+}
+
+.entry > * { position: relative; z-index: 1; }
+
+/*
+ * The theme toggle on the indigo pages. Pinned to the corner rather than put in
+ * the content flow, so it doesn't push the centred column off centre.
+ */
+.entry-toggle {
+  position: absolute;
+  top: max(0.85rem, env(safe-area-inset-top));
+  right: max(0.85rem, env(safe-area-inset-right));
+  z-index: 2;
+}
+
+.entry-toggle .btn {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.38);
+}
+.entry-toggle .btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.28); }
+.entry-toggle .btn:focus-visible { outline-color: var(--lime); }
+
+/* ─── Sign in ─────────────────────────────────────────────────────────────── */
+
+.auth-card { width: min(26rem, 100%); }
+
+.auth-brand {
+  text-align: center;
+  margin-bottom: calc(var(--space) * 1.5);
+}
+
+.auth-brand h1 {
+  font-size: clamp(2rem, 9vw, 3rem);
+  text-transform: uppercase;
+  color: var(--lime);
+}
+
+/*
+ * Everything below at body size sits on indigo, where white needs at least 0.9
+ * alpha to clear 4.5:1. Anything lower reads fine but fails the audit.
+ */
+.auth-brand p {
+  margin-top: 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* The form card stays white — a bright block on the indigo. */
+.auth-card .card {
+  border-color: var(--paper);
+  color: var(--ink);
+}
+
+/* Body copy under the card is on indigo, so it can't use the grey --muted. */
+.entry .muted { color: rgba(255, 255, 255, 0.92); }
+.entry .muted strong { color: var(--lime-soft); }
+
+/*
+ * …but the same class is used inside the white card — the "(optional)" and
+ * "(min 6 characters)" field hints — where white would be invisible.
+ */
+.entry .card .muted { color: var(--ink-muted); }
+.entry .card .muted strong { color: inherit; }
+
+/* ─── Welcome page ────────────────────────────────────────────────────────── */
+
+.welcome-inner {
+  width: min(56rem, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+.welcome-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.welcome-eyebrow {
+  font-size: clamp(0.78rem, 2.5vw, 0.92rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.welcome-title {
+  margin-top: 0.4rem;
+  font-size: clamp(2.1rem, 9vw, 4rem);
+  line-height: 1.02;
+  text-transform: uppercase;
+  /* Long names wrap instead of overflowing a narrow phone. */
+  overflow-wrap: anywhere;
+}
+
+.welcome-name { color: var(--lime); }
+
+.welcome-sub {
+  max-width: 34rem;
+  margin: 0.85rem auto 0;
+  font-size: clamp(0.92rem, 2.6vw, 1.05rem);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* ─── Mascots ─────────────────────────────────────────────────────────────── */
+
+/*
+ * The three shapes from the reference — a rounded square, a semicircle, and a
+ * hexagon — each with dot eyes and a smile. Drawn as inline SVG in Mascot.jsx.
+ */
+.mascot { display: block; width: 100%; height: 100%; }
+
+.welcome-mascots {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(0.5rem, 3vw, 1.5rem);
+  margin-top: clamp(1rem, 4vw, 1.75rem);
+}
+
+.welcome-mascots > * {
+  width: clamp(3.5rem, 14vw, 6rem);
+  aspect-ratio: 1;
+}
+
+/* The middle one sits a little higher, so the row isn't a flat line. */
+.welcome-mascots > *:nth-child(2) { margin-bottom: clamp(0.5rem, 2.5vw, 1.25rem); }
+
+/* ─── Welcome stats & steps ───────────────────────────────────────────────── */
+
+.welcome-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(0.5rem, 2vw, 1rem);
+}
+
+.welcome-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: clamp(0.8rem, 2.5vw, 1.35rem) 0.5rem;
+  text-align: center;
+  /* Sits on a brand colour, so the text is pinned dark in both themes. */
+  color: var(--on-brand);
+  border-radius: var(--radius);
+}
+
+/* Three of the four brand colours, left to right. */
+.welcome-stat:nth-child(1) { background: var(--lime); }
+.welcome-stat:nth-child(2) { background: var(--yellow); }
+.welcome-stat:nth-child(3) { background: var(--pink); }
+
+.welcome-stat .value {
+  font-size: clamp(1.2rem, 5vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.welcome-stat .label {
+  font-size: clamp(0.62rem, 2.2vw, 0.75rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  /* Matches the dashboard's stat labels — the lowest that clears 4.5:1 on pink. */
+  opacity: 0.72;
+}
+
+.welcome-steps {
+  display: grid;
+  gap: var(--space);
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+}
+
+/* Outlined rather than filled, so the coloured stats above stay dominant. */
+.welcome-step {
+  padding: clamp(1rem, 3vw, 1.4rem);
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius);
+}
+
+.welcome-step-icon { font-size: 1.5rem; }
+
+.welcome-step h2 {
+  margin-top: 0.45rem;
+  font-size: 1rem;
+  color: var(--lime-soft);
+}
+
+.welcome-step p {
+  margin-top: 0.3rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.welcome-actions .btn { flex: 1 1 12rem; max-width: 20rem; }
+
+/* On indigo the primary button flips to lime — dark type on bright. */
+.entry .btn-primary {
+  color: var(--on-brand);
+  background: var(--lime);
+}
+.entry .btn-primary:hover:not(:disabled) { background: #a9e152; }
+
+/* …and the quiet button becomes an outline, since grey vanishes on indigo. */
+.entry .welcome-actions .btn:not(.btn-primary) {
+  color: #fff;
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.45);
+}
+.entry .welcome-actions .btn:not(.btn-primary):hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.entry .btn:focus-visible { outline-color: var(--lime); }
+
+/* ─── Add Habit dialog ────────────────────────────────────────────────────── */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(22, 22, 45, 0.45);
+}
+
+.dialog-content {
+  position: fixed;
+  z-index: 70;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  width: min(30rem, calc(100vw - 2rem));
+  /* svh keeps the dialog inside a mobile browser's shrinking viewport. */
+  max-height: min(44rem, calc(100svh - 2rem));
+  color: var(--ink);
+  background: var(--paper);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.dialog-title {
+  padding: calc(var(--space) * 1.25) calc(var(--space) * 1.35) 0;
+  font-size: 1.3rem;
+}
+
+/* The form sits between the dialog and its scroll area, so it has to carry the
+   height constraint through: a flex item itself, and a flex column for the
+   body and the buttons below it. */
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Only the fields scroll; the title and the buttons stay put.
+   min-height: 0 is what actually lets this shrink — without it a flex item
+   refuses to go below its content height and pushes the buttons off screen. */
+.dialog-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space) calc(var(--space) * 1.35);
+  -webkit-overflow-scrolling: touch;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: var(--space) calc(var(--space) * 1.35)
+           calc(var(--space) + env(safe-area-inset-bottom));
+  border-top: 2px solid var(--line);
+}
+
+.dialog-actions .btn { min-width: 6rem; }
+
+.habit-name-input {
+  margin-bottom: var(--space);
+  font-size: 1rem;
+}
+
+.field-caption {
+  margin: calc(var(--space) * 1.15) 0 0.55rem;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.habit-notes { resize: vertical; min-height: 3.2rem; }
+
+/* ─── Icon grid ───────────────────────────────────────────────────────────── */
+
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.4rem;
+}
+
+.icon-option {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.1rem, 4.5vw, 1.35rem);
+  background: var(--paper-2);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.icon-option:hover { background: var(--paper-3); }
+
+.icon-option.selected {
+  /* The ring is drawn on the lime fill, not on the card, so it stays dark. */
+  border-color: var(--on-brand);
+  background: var(--lime);
+}
+
+.icon-option:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+/* ─── Colour swatches ─────────────────────────────────────────────────────── */
+
+.swatch-row {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.4rem;
+}
+
+.swatch {
+  aspect-ratio: 1;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.15s;
+}
+
+.swatch:hover { transform: scale(1.12); }
+
+/* A ring in the ink colour, which reads against every swatch. */
+.swatch.selected {
+  border-color: var(--ink);
+  transform: scale(1.08);
+}
+
+.swatch:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+/* ─── Category select (Radix) ─────────────────────────────────────────────── */
+
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.select-trigger:hover { background: var(--paper-3); }
+
+.select-trigger:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+.select-chevron { color: var(--ink-muted); font-size: 1.1rem; line-height: 1; }
+
+.select-content {
+  z-index: 90;
+  overflow: hidden;
+  min-width: var(--radix-select-trigger-width);
+  max-height: var(--radix-select-content-available-height);
+  padding: 0.35rem;
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+}
+
+.select-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  border-radius: 11px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.select-item[data-highlighted] {
+  outline: none;
+  color: var(--on-brand);
+  background: var(--lime);
+}
+
+.select-check { width: 1rem; color: var(--indigo); }
+
+/* ─── Target days ─────────────────────────────────────────────────────────── */
+
+.day-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.day-option {
+  width: 2.7rem;
+  height: 2.7rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink-muted);
+  background: var(--paper-2);
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.day-option:hover { background: var(--paper-3); }
+
+/* The selected day is the dark pill, as on the reference's date strip. */
+.day-option.selected {
+  color: var(--on-ink);
+  background: var(--ink);
+}
+
+.day-option:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+/* ─── Reminder switch (Radix) ─────────────────────────────────────────────── */
+
+.reminder-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space);
+  margin-top: 0.5rem;
+}
+
+.reminder-hint { margin-top: -0.3rem; font-size: 0.78rem; }
+
+.switch-root {
+  position: relative;
+  flex: 0 0 auto;
+  width: 3.1rem;
+  height: 1.8rem;
+  padding: 0;
+  background: var(--paper-3);
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.switch-root[data-state="checked"] { background: var(--ink); }
+
+.switch-root:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+.switch-thumb {
+  display: block;
+  width: 1.45rem;
+  height: 1.45rem;
+  background: #fff;
+  border-radius: 50%;
+  transform: translateX(0.18rem);
+  transition: transform 0.18s;
+  will-change: transform;
+}
+
+.switch-root[data-state="checked"] .switch-thumb {
+  background: var(--lime);
+  transform: translateX(1.48rem);
+}
+
+.reminder-time { margin-top: 0.6rem; }
+
+/* ─── Empty state ─────────────────────────────────────────────────────────── */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: clamp(1.5rem, 6vw, 3rem) 1rem;
+  text-align: center;
+}
+
+.empty-mascot {
+  width: clamp(5rem, 22vw, 7.5rem);
+  aspect-ratio: 1;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state h3 { font-size: clamp(1.15rem, 4.5vw, 1.6rem); }
+
+.empty-state p {
+  max-width: 24rem;
+  color: var(--ink-muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.empty-state .btn { margin-top: 0.85rem; padding: 0.8rem 1.8rem; }
+
+/* ─── "Your own habits" list ──────────────────────────────────────────────── */
+
+.my-habits {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+}
+
+/*
+ * Each habit is its own colour block. The habit's chosen colour is applied
+ * inline as a background in MyHabits.jsx; this is the fallback and the shape.
+ */
+.my-habit {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  color: var(--ink);
+  background: var(--paper-2);
+  border-radius: var(--radius-sm);
+}
+
+.my-habit-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.3rem;
+  height: 2.3rem;
+  font-size: 1.25rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+}
+
+.my-habit-body { flex: 1; min-width: 0; }
+.my-habit-name { font-weight: 700; font-size: 0.95rem; letter-spacing: -0.015em; }
+
+/*
+ * These sit on whatever colour the user picked — which textOn() has already
+ * paired with the more readable of ink or white. 0.85 is as far as the opacity
+ * can drop and still clear 4.5:1 against the darkest swatch in the palette.
+ */
+.my-habit-meta {
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.my-habit-notes {
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
+  opacity: 0.85;
+  overflow-wrap: anywhere;
+}
+
+/* Buttons on a coloured habit block get the same white pill as coloured cards,
+   so their label is pinned dark too. */
+.my-habit .btn {
+  color: var(--on-brand);
+  background: rgba(255, 255, 255, 0.72);
+}
+.my-habit .btn:hover:not(:disabled) { background: #fff; }
+
+/* ─── Small screens ───────────────────────────────────────────────────────── */
+
+@media (max-width: 26rem) {
+  /* Five icons a row keeps each target above 44px on the narrowest phones. */
+  .picker-grid { grid-template-columns: repeat(5, 1fr); }
+  .swatch-row { grid-template-columns: repeat(5, 1fr); }
+  .day-option { width: 2.9rem; height: 2.9rem; }
+  .dialog-actions .btn { flex: 1; }
+}
+
+@media (hover: none) {
+  .swatch:hover { transform: none; }
+  .swatch.selected { transform: none; }
+  .day-option { min-width: 2.9rem; min-height: 2.9rem; }
+}

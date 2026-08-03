@@ -14,15 +14,16 @@ database, network requests, input validation, error handling, and edge cases.
 Re-run the automated evidence at any time:
 
 ```bash
-python backend/tests/test_api.py          # 43 checks — API, validation, isolation
-python backend/tests/test_bot.py          # 25 checks — command parsing, formatting
+python backend/tests/test_api.py          # 45 checks — API, validation, isolation
+python backend/tests/test_habits.py       # 46 checks — custom habits: create, edit, delete, isolate
+python backend/tests/test_bot.py          # 27 checks — command parsing, formatting
 python backend/tests/test_persistence.py  # restart survival + idempotent seeding
 ```
 
-All three use a throwaway database and need no Telegram token.
-Last full run: **43 passed, 0 failed**, **25 passed, 0 failed**, and persistence OK.
-The web UI was additionally driven end-to-end in Chromium: **24 checks passed, no
-console errors**.
+All four use a throwaway database and need no Telegram token.
+Last full run: **45 passed**, **46 passed**, **27 passed**, 0 failed, and persistence OK.
+The web UI was additionally driven end-to-end in Chromium: **30 checks passed, no
+unexpected console errors**.
 
 ---
 
@@ -58,7 +59,7 @@ console errors**.
 | # | Check | Steps | Expected result | Result |
 |---|-------|-------|-----------------|--------|
 | 18 | Missing required input | `/log water` (no value) | *"I need both a habit and a value"* plus usage examples | ✅ pass — `test_bot.py` *"missing value errors"* |
-| 19 | Unknown habit | `/log pizza 1` | *"I don't track 'pizza'"* plus the valid list | ✅ pass — `test_bot.py` *"unknown habit errors"*; `test_api.py` *"unknown habit -> 422"* |
+| 19 | Unknown habit | `/log pizza 1` | *"Unknown habit: 'pizza'. You track: …"* — a name nobody has is rejected with the list of the ones this user does have | ✅ pass — `test_api.py` *"unknown habit -> 400"*, *"unknown habit lists what they do track"*; `test_bot.py` *"unreadable habit name errors"* |
 | 20 | Wrong type | `/log water abc` | *"'abc' is not a number"* with a corrected example | ✅ pass — `test_bot.py` *"non-numeric errors"* |
 | 21 | Wrong format | `/log bedtime 22` (needs `HH:MM`) | *"needs a time like 22:30"* | ✅ pass — `test_bot.py` *"time habit needs HH:MM"*; browser *"bad time rejected client-side"* |
 | 22 | Out of range | `/log water 999` | *"Value for water must be between 0 and 20"* | ✅ pass — `test_api.py` *"out-of-range -> 400"*; browser *"out-of-range shows server message"* |
@@ -90,7 +91,40 @@ console errors**.
 | 43 | Link code expires | Generate a code, wait 6 minutes, use it | Rejected as expired | ☐ to verify in a real chat |
 | 44 | Reminder fires | Set a reminder two minutes ahead on a linked account | The message arrives in Telegram at that minute, once | ☐ to verify in a real chat |
 | 45 | Secrets not in git | `git ls-files \| grep env` | Only `.env.example` is tracked | ✅ pass — `git check-ignore backend/.env` matches `.gitignore:2` |
-| 46 | Responsive layout | Open the dashboard at 375 px wide | No horizontal scrolling; the layout stacks | ✅ pass — browser *"no horizontal overflow"* |
+| 46 | Responsive layout | Open the dashboard at 375 px wide | No horizontal scrolling; the layout stacks | ✅ pass — browser *"no horizontal overflow"* on the welcome page, the dashboard, and the Add Habit dialog, at 390 px and 820 px |
+
+## E. Custom habits
+
+| # | Check | Steps | Expected result | Result |
+|---|-------|-------|-----------------|--------|
+| 47 | Welcome page | Register, or log in | Lands on a page greeting you by name, with streak / done-today / 7-day tiles | ✅ pass — browser *"lands on /welcome"*, *"greets by name"* |
+| 48 | Empty state | Open the dashboard with no habits of your own | *"Track your first habit"* with a **+ Add Habit** button | ✅ pass — browser *"empty state visible"*, *"empty state copy"* |
+| 49 | Add Habit form | Press **+ Add Habit** | Name field, 30 icons, 20 colours, 8 categories, 1–7 day targets, notes, reminder switch | ✅ pass — browser *"30 icons"*, *"20 colours"*, *"7 day chips"* |
+| 50 | Create a habit | Fill the form in and press **Add** | Habit appears in today's list and under *Your own habits* with its icon, colour, target, and notes | ✅ pass — `test_habits.py` *"create -> 201"*; browser *"shows in my habits"*, *"seven rows in today"* |
+| 51 | Reminder from the form | Switch **Reminder** on, pick 07:30, save | The reminder is stored and listed straight away; it is delivered by Telegram | ✅ pass — `test_habits.py` *"reminder was actually stored"*; browser *"reminder listed"* — delivery itself is row 44 |
+| 52 | Blank name | Press **Add** with the name empty | *"Give the habit a name first."* — nothing saved | ✅ pass — `test_habits.py` *"blank name -> 422"*; browser *"blank name blocked"* |
+| 53 | Duplicate name | Add a habit you already have | *"You already have a habit called 'Morning Run'."* | ✅ pass — `test_habits.py` *"duplicate name -> 400"*; browser *"duplicate rejected with a clear message"* |
+| 54 | Out-of-range target | `POST /api/habits` with `target_days: 8` | 422, rejected before the database | ✅ pass — `test_habits.py` *"target_days 8 -> 422"*, *"target_days 0 -> 422"* |
+| 55 | Bad colour / category | `POST /api/habits` with `color: "red"` or an unknown category | 422 for each | ✅ pass — `test_habits.py` *"colour must be a hex code -> 422"*, *"unknown category -> 422"* |
+| 56 | Non-Latin name | Add a habit called *Пить воду* | Accepted; gets a stable short name, and adding it twice is still caught | ✅ pass — `test_habits.py` *"non-latin name still gets a slug"*, *"same name gives the same slug"* |
+| 57 | Mark done | Tap **Mark done** on your habit | Button flips to **Done**, the week counter goes to `1/5`; tapping again clears it | ✅ pass — browser *"button flips to Done"*, *"week counter moves"* |
+| 58 | Isolation — custom habits | User B opens the dashboard after A created a habit | B doesn't see it, and cannot log, edit, or delete it by id | ✅ pass — `test_habits.py` *"the other user does not"*, *"Bob cannot edit/delete/log Alice's habit"* |
+| 59 | Same name, two users | A and B both create *Morning Run* | Both succeed and get separate rows | ✅ pass — `test_habits.py` *"Bob may use the same name -> 201"*, *"and gets his own row"* |
+| 60 | Built-ins protected | Try to delete or edit `water` | 404 both times — a built-in has no owner, so it can never match | ✅ pass — `test_habits.py` *"built-in not deletable -> 404"*, *"built-in not editable -> 404"* |
+| 61 | Delete a habit | Delete your habit from *Your own habits* | It disappears from both lists, its logs and reminders go with it, deleting again is a clean 404 | ✅ pass — `test_habits.py` *"its logs went with it"*, *"deleting twice -> 404"*; browser *"back to empty state"* |
+| 62 | Log a custom habit from Telegram | `/log morning_run` on a linked account | Marked done for today with no value needed | ☐ to verify in a real chat |
+| 63 | Upgrading an existing database | Start the app against a database from before this feature | Columns added, the table rebuilt, every existing log and reminder still attached to the right habit | ✅ pass — ran against a copy of the live database: 4 logs and 2 reminders preserved, 0 orphans, second run a no-op |
+| 64 | Frontend not built | Delete `frontend/dist`, start the app, open the page | A plain page saying to run `npm run build`; `/api/health` and `/docs` still work | ✅ pass — the 503 build-missing page is returned for non-API paths only |
+
+## F. Theme
+
+| # | Check | Steps | Expected result | Result |
+|---|-------|-------|-----------------|--------|
+| 65 | Toggle the theme | Press the ☀️/🌙 button in the header | The whole page switches theme immediately, charts included | ✅ pass — charts re-read the tokens through `chartColors()`, with `theme` in their `useMemo` deps |
+| 66 | The choice sticks | Toggle, then reload; toggle, then open another page | The chosen theme is still applied, with no flash of the other one on load | ✅ pass — stored under `bj_theme`; the inline script in `index.html` sets `data-theme` before first paint |
+| 67 | Follows the system until you choose | With nothing stored, switch the OS between light and dark | The app follows the OS. After you use the toggle once, your choice wins and the OS stops overriding it | ✅ pass — `matchMedia` listener in `theme.js` bails out when an explicit choice is stored |
+| 68 | Contrast in both themes | Audit every page in light and dark | Every text pairing clears AA — 4.5:1, or 3:1 at ≥24px / ≥18.66px bold | ✅ pass — automated walk of every text run on auth, welcome, dashboard, and the Add Habit dialog: 8/8 pages clean in both themes |
+| 69 | Coloured blocks keep dark type | Switch to dark and look at the stat tiles, habit blocks, and the quotes card | Text on lime/yellow/pink/user-chosen fills stays dark and legible; it does not invert with the theme | ✅ pass — pinned to `--on-brand`, which is theme-independent by design |
 
 ---
 
@@ -104,18 +138,19 @@ console errors**.
       [architecture.md](architecture.md)
 - [x] Input validation on every user-provided value
 - [x] Error handling across all four categories — network, database, user, unexpected
-- [x] A manual QA checklist with ≥ 10 checks — this file, 46 rows
+- [x] A manual QA checklist with ≥ 10 checks — this file, 69 rows
 - [x] Launch instructions — [README.md](README.md)
-- [x] User isolation — every user-data query is scoped by `user_id`
+- [x] User isolation — every user-data query is scoped by `user_id`, including the
+      habits a user creates
 - [x] Secrets out of code — `.env` git-ignored, `.env.example` committed
-- [x] Layered structure — one responsibility per module
+- [x] Layered structure — one responsibility per module, on both sides
 - [ ] **Live Telegram pass before the demo** — tick rows 2, 3, 4, 12, 13, 31, 41, 42,
-      43, and 44 in a real chat
+      43, 44, and 62 in a real chat
 
 ## Actual test run
 
 - Date tested:
 - Commit:
-- Automated: 43/43 API, 25/25 bot, 24/24 browser, persistence OK
-- Manual rows passed: __ / 10
+- Automated: 45/45 API, 46/46 habits, 27/27 bot, 30/30 browser, persistence OK
+- Manual rows passed: __ / 11
 - Failed checks + notes:

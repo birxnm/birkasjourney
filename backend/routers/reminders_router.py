@@ -43,7 +43,7 @@ async def create(
     habit_id = None
     habit_icon = None
     if payload.habit_name:
-        habit = await db.get_habit_by_name(payload.habit_name.lower().strip())
+        habit = await db.get_habit_by_name(payload.habit_name.lower().strip(), user_id)
         if not habit:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

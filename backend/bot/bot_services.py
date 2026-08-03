@@ -5,6 +5,7 @@ Parsing of command arguments and Telegram-specific formatting that is not shared
 with the web API. No SQL and no aiogram types here — handlers own those.
 """
 
+import re
 from collections import defaultdict
 
 import services
@@ -40,7 +41,9 @@ USAGE = (
     "• <code>/log wakeup 06:00</code>\n"
     "• <code>/log ielts 60</code> — minutes\n"
     "• <code>/log it 2</code> — tasks done\n\n"
-    f"Habits: {', '.join(sorted(set(HABIT_ALIASES.values())))}"
+    f"Built-in habits: {', '.join(sorted(set(HABIT_ALIASES.values())))}\n"
+    "For a habit you added yourself, just <code>/log &lt;name&gt;</code> — "
+    "logging it marks it done for today."
 )
 
 
@@ -48,19 +51,35 @@ def parse_log_command(argument_text: str) -> tuple[str, float]:
     """
     Turn '/log' arguments into (habit_name, value).
 
+    A name that isn't a built-in alias is passed through as a habit slug: only
+    the database knows which custom habits this user has, and that check
+    belongs in services. Those are yes/no habits, so the value may be left off
+    and defaults to 1 — "done today".
+
     Raises ValueError with a user-friendly message on any malformed input.
     """
     parts = argument_text.split()
+    if not parts:
+        raise ValueError("I need a habit name.\n\n" + USAGE)
+
+    raw_habit = parts[0].lower().strip()
+    habit_name = HABIT_ALIASES.get(raw_habit)
+
+    if habit_name is None:
+        # Not a built-in — treat it as one of the user's own habits.
+        if not re.fullmatch(r"[a-z0-9_]{1,50}", raw_habit):
+            raise ValueError(
+                f"'{parts[0]}' isn't a habit name I can read. Use the short name "
+                "shown on your dashboard, e.g. <code>/log morning_run</code>."
+            )
+        habit_name = raw_habit
+        if len(parts) < 2:
+            return habit_name, 1.0
+
     if len(parts) < 2:
         raise ValueError("I need both a habit and a value.\n\n" + USAGE)
 
-    raw_habit, raw_value = parts[0].lower().strip(), parts[1].strip()
-
-    habit_name = HABIT_ALIASES.get(raw_habit)
-    if habit_name is None:
-        raise ValueError(
-            f"I don't track '{raw_habit}'.\n\n" + USAGE
-        )
+    raw_value = parts[1].strip()
 
     if habit_name in TIME_HABITS:
         if ":" not in raw_value:
