@@ -31,6 +31,23 @@ export function decimalToTime(decimal) {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
+/**
+ * A stored "HH:MM" shown the way this device writes times.
+ *
+ * Reminders are stored and sent as 24-hour "HH:MM", but an <input type="time">
+ * renders in the browser's own format — "21:00" here, "9:00 PM" there. Anything
+ * that displays a reminder time goes through this, so one screen never mixes
+ * the two conventions.
+ */
+export function formatClock(hhmm) {
+  const [hour, minute] = String(hhmm).split(":").map(Number);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return String(hhmm);
+  return new Date(2000, 0, 1, hour, minute).toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 /** Format a stored value for display, respecting time-based habits. */
 export function formatValue(habit, value) {
   if (value === null || value === undefined) return "—";

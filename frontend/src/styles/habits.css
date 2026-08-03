@@ -569,6 +569,102 @@
   transform: translateX(1.48rem);
 }
 
+/* ─── Time field ──────────────────────────────────────────────────────────── */
+
+/*
+ * This lives in containers of very different widths — the dialog, the narrow
+ * dashboard sidebar (~220px), a phone card (~330px), a tablet card (~580px) —
+ * so it sizes off its own width with a container query, not the viewport. A
+ * media query would get the sidebar and the phone wrong, since those are two
+ * different widths at the same viewport size.
+ */
+.time-field {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.time-input {
+  /* Sized to its content — a five-character value has no use for 100%, which
+     is what the global input rule would otherwise give it. */
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 6.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* The native clock button is a small target by default. */
+.time-input::-webkit-calendar-picker-indicator {
+  width: 1.3rem;
+  height: 1.3rem;
+  padding: 0.15rem;
+  cursor: pointer;
+  opacity: 0.55;
+}
+.time-input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+/*
+ * Two up by default, four across once there's room. Fixed counts rather than
+ * auto-fit: with exactly four items, auto-fit's third column strands the last
+ * pick on a row of its own at some widths.
+ */
+.time-presets {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  width: 100%;
+  gap: 0.35rem;
+}
+
+/*
+ * 30rem is set by the widest label, not by taste. On a 12-hour locale a pick
+ * reads "☀️ 12:00 PM" and needs ~94px; at four across, a 385px container (the
+ * dashboard sidebar) leaves exactly 94px — zero slack, one font change from
+ * clipping. Four across therefore waits until the container is genuinely wide,
+ * and everything narrower stays a comfortable 2×2.
+ */
+@container (min-width: 30rem) {
+  .time-presets { grid-template-columns: repeat(4, 1fr); }
+}
+
+.time-preset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Tight horizontally: at four across, the label only has ~92px to sit in and
+     a 12-hour locale spends most of that on "8:00 AM". */
+  gap: 0.25rem;
+  padding: 0.4rem 0.45rem;
+  font: inherit;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+  background: var(--paper-2);
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.time-preset:hover { background: var(--paper-3); }
+
+/* The chosen one becomes the dark pill, like the other selected states. */
+.time-preset.selected {
+  color: var(--on-ink);
+  background: var(--ink);
+}
+
+.time-preset:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+}
+
 .reminder-time { margin-top: 0.6rem; }
 
 /* ─── Empty state ─────────────────────────────────────────────────────────── */
@@ -676,4 +772,8 @@
   .swatch:hover { transform: none; }
   .swatch.selected { transform: none; }
   .day-option { min-width: 2.9rem; min-height: 2.9rem; }
+  /* Finger-sized quick-picks, and no hover flicker on the way to a tap. */
+  .time-preset { min-height: 40px; padding: 0.45rem 0.8rem; }
+  .time-preset:hover { background: var(--paper-2); }
+  .time-preset.selected:hover { background: var(--ink); }
 }

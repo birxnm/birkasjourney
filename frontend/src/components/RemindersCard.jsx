@@ -8,6 +8,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { API } from "../api.js";
+import { formatClock } from "../habits.js";
+import TimeField from "./TimeField.jsx";
 import { useToast } from "./Toast.jsx";
 
 export default function RemindersCard({ refreshKey }) {
@@ -49,7 +51,7 @@ export default function RemindersCard({ refreshKey }) {
     try {
       await API.createReminder({ message: text, remind_at: time });
       setMessage("");
-      toast(`Reminder set for ${time}`);
+      toast(`Reminder set for ${formatClock(time)}`);
       await load();
     } catch (err) {
       toast(err.message, true);
@@ -77,13 +79,7 @@ export default function RemindersCard({ refreshKey }) {
       <form onSubmit={handleSubmit} style={{ marginBottom: "0.75rem" }}>
         <div className="field">
           <label htmlFor="reminder-time">Time</label>
-          <input
-            id="reminder-time"
-            type="time"
-            required
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-          />
+          <TimeField id="reminder-time" required value={time} onChange={setTime} />
         </div>
         <div className="field">
           <label htmlFor="reminder-message">Message</label>
@@ -111,13 +107,13 @@ export default function RemindersCard({ refreshKey }) {
 
       {reminders?.map((reminder) => (
         <div className="reminder" key={reminder.id}>
-          <span className="time">{reminder.remind_at}</span>
+          <span className="time">{formatClock(reminder.remind_at)}</span>
           <span className="text">{reminder.message}</span>
           <button
             className="btn btn-sm"
             type="button"
             title="Delete"
-            aria-label={`Delete the ${reminder.remind_at} reminder`}
+            aria-label={`Delete the ${formatClock(reminder.remind_at)} reminder`}
             onClick={() => remove(reminder.id)}
           >
             ✕

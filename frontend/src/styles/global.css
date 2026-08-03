@@ -17,6 +17,14 @@
 /* ─── Tokens ──────────────────────────────────────────────────────────────── */
 
 :root {
+  /*
+   * Tells the browser which way to render native controls it draws itself — the
+   * time input's internals and its picker popup, form controls, scrollbars.
+   * Without this the clock icon stays black on a dark surface and the picker
+   * pops up white.
+   */
+  color-scheme: light;
+
   /* Brand — the four colours from the style sheet. Identical in both themes. */
   --indigo: #4e55e0;
   --lime: #b8eb6c;
@@ -87,6 +95,8 @@
  * theme.js sets this attribute; index.html sets it again before first paint.
  */
 :root[data-theme="dark"] {
+  color-scheme: dark;
+
   --bg: #0e0e13;
   --paper: #191921;
   --paper-2: #23232e;
