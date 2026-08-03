@@ -15,6 +15,15 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 
+class DuplicateHabitName(Exception):
+    """
+    Raised when a habit name is already taken for that owner.
+
+    Defined here so the sqlite-specific IntegrityError never leaves this layer;
+    services turns this into a message the user can act on.
+    """
+
+
 async def get_db() -> aiosqlite.Connection:
     """Get a database connection."""
     db = await aiosqlite.connect(settings.DB_FULL_PATH)
@@ -38,14 +47,24 @@ async def init_db() -> None:
                 created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
             );
 
+            -- user_id NULL marks a built-in habit shared by everyone; a value
+            -- marks one the user created. kind is 'measured' (a value against a
+            -- target, like 2 litres) or 'binary' (done or not, N days a week).
             CREATE TABLE IF NOT EXISTS habits (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                name            TEXT NOT NULL UNIQUE,
+                user_id         INTEGER REFERENCES users(id),
+                name            TEXT NOT NULL,
                 display_name    TEXT NOT NULL,
+                kind            TEXT NOT NULL DEFAULT 'measured',
                 target_value    REAL,
+                target_days     INTEGER NOT NULL DEFAULT 7,
                 unit            TEXT,
                 icon            TEXT,
+                color           TEXT,
+                category        TEXT,
+                notes           TEXT,
                 sort_order      INTEGER DEFAULT 0,
+                is_archived     INTEGER NOT NULL DEFAULT 0,
                 created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
             );
 
@@ -101,6 +120,110 @@ async def init_db() -> None:
         await db.close()
 
 
+# Columns added after the first release, applied to existing databases on start.
+_HABIT_MIGRATIONS = [
+    ("kind", "TEXT NOT NULL DEFAULT 'measured'"),
+    ("user_id", "INTEGER REFERENCES users(id)"),
+    ("color", "TEXT"),
+    ("category", "TEXT"),
+    ("target_days", "INTEGER NOT NULL DEFAULT 7"),
+    ("notes", "TEXT"),
+    ("is_archived", "INTEGER NOT NULL DEFAULT 0"),
+]
+
+
+async def migrate_db() -> None:
+    """
+    Bring an existing database up to the current schema.
+
+    Runs on every start and does nothing when already current, so a fresh
+    install and an upgraded one end up identical.
+    """
+    db = await get_db()
+    try:
+        cursor = await db.execute("PRAGMA table_info(habits)")
+        columns = {row[1] for row in await cursor.fetchall()}
+
+        added = [c for c, ddl in _HABIT_MIGRATIONS if c not in columns]
+        for column, ddl in _HABIT_MIGRATIONS:
+            if column not in columns:
+                await db.execute(f"ALTER TABLE habits ADD COLUMN {column} {ddl}")
+        if added:
+            await db.commit()
+            logger.info("Added habit columns: %s", ", ".join(added))
+
+        # The original schema made `name` globally UNIQUE, which would stop two
+        # users from each having a habit called "Gym". Replace that with one
+        # partial index per scope: built-ins (user_id IS NULL) keep unique names
+        # among themselves, and each user's own habits are unique to that user.
+        cursor = await db.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'habits'"
+        )
+        row = await cursor.fetchone()
+        if row and "name            TEXT NOT NULL UNIQUE" in row[0]:
+            await _rebuild_habits_without_global_unique(db)
+            logger.info("Rebuilt habits table: name is now unique per owner")
+
+        await db.execute(
+            """CREATE UNIQUE INDEX IF NOT EXISTS habits_builtin_name
+               ON habits(name) WHERE user_id IS NULL"""
+        )
+        await db.execute(
+            """CREATE UNIQUE INDEX IF NOT EXISTS habits_user_name
+               ON habits(user_id, name) WHERE user_id IS NOT NULL"""
+        )
+        await db.commit()
+    except Exception as e:
+        logger.error("Migration failed: %s", e)
+        raise
+    finally:
+        await db.close()
+
+
+async def _rebuild_habits_without_global_unique(db: aiosqlite.Connection) -> None:
+    """
+    SQLite cannot drop a column constraint, so the table is rebuilt.
+
+    Ids are carried over unchanged, which is what keeps existing habit_logs and
+    reminders pointing at the right habit. Foreign keys are suspended for the
+    swap because the old table is dropped while those rows still reference it.
+    """
+    await db.execute("PRAGMA foreign_keys=OFF")
+    try:
+        await db.execute("""
+            CREATE TABLE habits_rebuilt (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id         INTEGER REFERENCES users(id),
+                name            TEXT NOT NULL,
+                display_name    TEXT NOT NULL,
+                kind            TEXT NOT NULL DEFAULT 'measured',
+                target_value    REAL,
+                target_days     INTEGER NOT NULL DEFAULT 7,
+                unit            TEXT,
+                icon            TEXT,
+                color           TEXT,
+                category        TEXT,
+                notes           TEXT,
+                sort_order      INTEGER DEFAULT 0,
+                is_archived     INTEGER NOT NULL DEFAULT 0,
+                created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        await db.execute("""
+            INSERT INTO habits_rebuilt
+                (id, user_id, name, display_name, kind, target_value, target_days,
+                 unit, icon, color, category, notes, sort_order, is_archived, created_at)
+            SELECT id, user_id, name, display_name, kind, target_value, target_days,
+                   unit, icon, color, category, notes, sort_order, is_archived, created_at
+            FROM habits
+        """)
+        await db.execute("DROP TABLE habits")
+        await db.execute("ALTER TABLE habits_rebuilt RENAME TO habits")
+        await db.commit()
+    finally:
+        await db.execute("PRAGMA foreign_keys=ON")
+
+
 async def seed_habits() -> None:
     """Seed default habit definitions if not already present."""
     habits = [
@@ -115,8 +238,9 @@ async def seed_habits() -> None:
     try:
         for name, display_name, target, unit, icon, order in habits:
             await db.execute(
-                """INSERT OR IGNORE INTO habits (name, display_name, target_value, unit, icon, sort_order)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                """INSERT OR IGNORE INTO habits
+                       (user_id, name, display_name, kind, target_value, unit, icon, sort_order)
+                   VALUES (NULL, ?, ?, 'measured', ?, ?, ?, ?)""",
                 (name, display_name, target, unit, icon, order),
             )
         await db.commit()
@@ -266,12 +390,20 @@ async def link_telegram_to_user(user_id: int, telegram_id: int) -> str:
 
 # ─── Habit Operations ────────────────────────────────────────────────────────
 
-async def get_all_habits() -> list[dict]:
-    """Get all habit definitions."""
+async def get_all_habits(user_id: Optional[int] = None) -> list[dict]:
+    """
+    Habit definitions visible to one user: the built-ins plus their own.
+
+    Passing no user_id returns only the built-ins, which is what the seeding
+    and migration paths want.
+    """
     db = await get_db()
     try:
         cursor = await db.execute(
-            "SELECT * FROM habits ORDER BY sort_order"
+            """SELECT * FROM habits
+               WHERE is_archived = 0 AND (user_id IS NULL OR user_id = ?)
+               ORDER BY user_id IS NOT NULL, sort_order, id""",
+            (user_id,),
         )
         rows = await cursor.fetchall()
         return [dict(row) for row in rows]
@@ -279,15 +411,189 @@ async def get_all_habits() -> list[dict]:
         await db.close()
 
 
-async def get_habit_by_name(name: str) -> Optional[dict]:
-    """Get a habit definition by its name."""
+async def get_habit_by_name(name: str, user_id: Optional[int] = None) -> Optional[dict]:
+    """
+    Find a habit by name, preferring the user's own over a built-in.
+
+    A user who creates a habit named like a built-in gets their own version.
+    """
     db = await get_db()
     try:
         cursor = await db.execute(
-            "SELECT * FROM habits WHERE name = ?", (name,)
+            """SELECT * FROM habits
+               WHERE name = ? AND is_archived = 0
+                 AND (user_id IS NULL OR user_id = ?)
+               ORDER BY user_id IS NULL
+               LIMIT 1""",
+            (name, user_id),
         )
         row = await cursor.fetchone()
         return dict(row) if row else None
+    finally:
+        await db.close()
+
+
+async def get_habit_by_id(habit_id: int, user_id: int) -> Optional[dict]:
+    """Fetch one habit the user is allowed to see."""
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            """SELECT * FROM habits
+               WHERE id = ? AND (user_id IS NULL OR user_id = ?)""",
+            (habit_id, user_id),
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+    finally:
+        await db.close()
+
+
+async def create_habit(
+    user_id: int,
+    name: str,
+    display_name: str,
+    kind: str = "binary",
+    icon: Optional[str] = None,
+    color: Optional[str] = None,
+    category: Optional[str] = None,
+    target_days: int = 7,
+    target_value: Optional[float] = None,
+    unit: Optional[str] = None,
+    notes: Optional[str] = None,
+) -> int:
+    """Create a habit owned by one user. Raises DuplicateHabitName if taken."""
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            """INSERT INTO habits
+                   (user_id, name, display_name, kind, target_value, target_days,
+                    unit, icon, color, category, notes, sort_order)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                       COALESCE((SELECT MAX(sort_order) + 1 FROM habits WHERE user_id = ?), 100))""",
+            (user_id, name, display_name, kind, target_value, target_days,
+             unit, icon, color, category, notes, user_id),
+        )
+        await db.commit()
+        return cursor.lastrowid
+    except aiosqlite.IntegrityError as e:
+        # The partial unique index on (user_id, name) rejected the row.
+        raise DuplicateHabitName(name) from e
+    finally:
+        await db.close()
+
+
+async def update_habit(user_id: int, habit_id: int, fields: dict) -> bool:
+    """
+    Update a habit the user owns. Built-ins (user_id IS NULL) are never editable.
+
+    Column names come from a fixed allow-list, never from the request.
+    """
+    allowed = (
+        "display_name", "icon", "color", "category",
+        "target_days", "target_value", "notes", "is_archived",
+    )
+    if not any(field in fields for field in allowed):
+        return False
+
+    # Static SQL with COALESCE: passing None for a column leaves it unchanged,
+    # so one statement covers every combination without building it as a string.
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            """UPDATE habits SET
+                   display_name = COALESCE(?, display_name),
+                   icon         = COALESCE(?, icon),
+                   color        = COALESCE(?, color),
+                   category     = COALESCE(?, category),
+                   target_days  = COALESCE(?, target_days),
+                   target_value = COALESCE(?, target_value),
+                   notes        = COALESCE(?, notes),
+                   is_archived  = COALESCE(?, is_archived)
+               WHERE id = ? AND user_id = ?""",
+            (
+                fields.get("display_name"),
+                fields.get("icon"),
+                fields.get("color"),
+                fields.get("category"),
+                fields.get("target_days"),
+                fields.get("target_value"),
+                fields.get("notes"),
+                fields.get("is_archived"),
+                habit_id,
+                user_id,
+            ),
+        )
+        await db.commit()
+        return cursor.rowcount > 0
+    finally:
+        await db.close()
+
+
+async def delete_habit(user_id: int, habit_id: int) -> bool:
+    """
+    Delete a habit the user owns, along with its logs and reminders.
+
+    Built-ins are protected by the `user_id = ?` clause — they have a NULL owner,
+    so they can never match and can never be deleted.
+    """
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            "SELECT id FROM habits WHERE id = ? AND user_id = ?", (habit_id, user_id)
+        )
+        if await cursor.fetchone() is None:
+            return False
+
+        await db.execute(
+            "DELETE FROM habit_logs WHERE habit_id = ? AND user_id = ?",
+            (habit_id, user_id),
+        )
+        await db.execute(
+            "DELETE FROM reminders WHERE habit_id = ? AND user_id = ?",
+            (habit_id, user_id),
+        )
+        await db.execute(
+            "DELETE FROM habits WHERE id = ? AND user_id = ?", (habit_id, user_id)
+        )
+        await db.commit()
+        return True
+    finally:
+        await db.close()
+
+
+async def count_days_completed(user_id: int, habit_id: int, days: int = 7) -> int:
+    """How many of the last N days this habit was completed — the binary target."""
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            """SELECT COUNT(DISTINCT log_date) FROM habit_logs
+               WHERE user_id = ? AND habit_id = ? AND is_completed = 1
+                 AND log_date >= date('now', ?)""",
+            (user_id, habit_id, f"-{days} days"),
+        )
+        row = await cursor.fetchone()
+        return row[0] if row else 0
+    finally:
+        await db.close()
+
+
+async def count_days_completed_by_habit(user_id: int, days: int = 7) -> dict[int, int]:
+    """
+    Days completed in the last N days for every habit, as {habit_id: count}.
+
+    One grouped query so the dashboard summary doesn't run a count per habit.
+    """
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            """SELECT habit_id, COUNT(DISTINCT log_date) AS days_done
+               FROM habit_logs
+               WHERE user_id = ? AND is_completed = 1
+                 AND log_date >= date('now', ?)
+               GROUP BY habit_id""",
+            (user_id, f"-{days} days"),
+        )
+        return {row["habit_id"]: row["days_done"] for row in await cursor.fetchall()}
     finally:
         await db.close()
 
@@ -319,13 +625,15 @@ async def get_today_logs(user_id: int, log_date: str) -> list[dict]:
     try:
         cursor = await db.execute(
             """SELECT h.id as habit_id, h.name, h.display_name, h.target_value,
-                      h.unit, h.icon, h.sort_order,
+                      h.unit, h.icon, h.sort_order, h.kind, h.color,
+                      h.category, h.target_days, h.notes, h.user_id as owner_id,
                       hl.value, hl.is_completed, hl.log_date
                FROM habits h
                LEFT JOIN habit_logs hl ON h.id = hl.habit_id
                    AND hl.user_id = ? AND hl.log_date = ?
-               ORDER BY h.sort_order""",
-            (user_id, log_date),
+               WHERE h.is_archived = 0 AND (h.user_id IS NULL OR h.user_id = ?)
+               ORDER BY h.user_id IS NOT NULL, h.sort_order, h.id""",
+            (user_id, log_date, user_id),
         )
         rows = await cursor.fetchall()
         return [dict(row) for row in rows]

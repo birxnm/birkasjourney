@@ -34,7 +34,12 @@ check("alias bedtime->sleep", bs.parse_log_command("bedtime 22:30") == ("sleep",
 check("alias it->it_projects", bs.parse_log_command("it 2") == ("it_projects", 2.0))
 check("steps int", bs.parse_log_command("steps 8000") == ("steps", 8000.0))
 check("missing value errors", raises(bs.parse_log_command, "water") is not None)
-check("unknown habit errors", "don't track" in (raises(bs.parse_log_command, "pizza 1") or ""))
+# An unrecognised name is passed through as a custom-habit slug — only the
+# database knows whether this user has one, so services decides, not the parser.
+check("custom habit slug passes through", bs.parse_log_command("morning_run 1") == ("morning_run", 1.0))
+check("custom habit without a value means done", bs.parse_log_command("morning_run") == ("morning_run", 1.0))
+check("unreadable habit name errors",
+      "isn't a habit name" in (raises(bs.parse_log_command, "piz-za! 1") or ""))
 check("non-numeric errors", "not a number" in (raises(bs.parse_log_command, "water abc") or ""))
 check("time habit needs HH:MM", "needs a time" in (raises(bs.parse_log_command, "bedtime 22") or ""))
 check("empty args errors", raises(bs.parse_log_command, "") is not None)

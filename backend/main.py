@@ -13,9 +13,9 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 import database as db
@@ -30,6 +30,30 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+DIST_DIR = FRONTEND_DIR / "dist"
+INDEX_FILE = DIST_DIR / "index.html"
+
+# Shown instead of the dashboard when the React app has not been built yet.
+BUILD_MISSING_PAGE = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Birka's Journey — build the frontend</title>
+<style>
+  body{margin:0;display:grid;place-items:center;min-height:100vh;background:#0a0a14;
+       color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  main{max-width:32rem;padding:2rem;text-align:center}
+  code{display:block;margin:1rem 0;padding:.9rem;background:rgba(255,255,255,.06);
+       border:1px solid rgba(255,255,255,.1);border-radius:10px;
+       font-family:ui-monospace,Menlo,monospace;color:#22d3ee}
+  a{color:#a78bfa}
+</style></head>
+<body><main>
+  <h1>The dashboard isn't built yet</h1>
+  <p>The API is running. Build the React frontend once, then reload this page:</p>
+  <code>cd frontend &amp;&amp; npm install &amp;&amp; npm run build</code>
+  <p>The API itself is fine — see <a href="/docs">/docs</a>.</p>
+</main></body></html>
+"""
 
 
 @asynccontextmanager
@@ -44,6 +68,7 @@ async def lifespan(app: FastAPI):
         logger.warning("Configuration warning: %s", e)
 
     await db.init_db()
+    await db.migrate_db()  # brings an older database up to the current schema
     await db.seed_habits()
     await db.seed_quotes(QUOTES)
 
@@ -110,24 +135,39 @@ async def health() -> dict:
 
 
 # ─── Static frontend ─────────────────────────────────────────────────────────
-# Mounted last so /api/* routes always win.
+# The dashboard is a React app built by Vite into frontend/dist. Everything here
+# is registered last so /api/* and /docs always win.
 
-if FRONTEND_DIR.exists():
-    for folder in ("css", "js", "assets"):
-        if (FRONTEND_DIR / folder).exists():
-            app.mount(
-                f"/{folder}",
-                StaticFiles(directory=FRONTEND_DIR / folder),
-                name=folder,
-            )
+if DIST_DIR.exists():
+    app.mount(
+        "/assets", StaticFiles(directory=DIST_DIR / "assets"), name="assets"
+    )
 
-    @app.get("/", include_in_schema=False)
-    async def index() -> FileResponse:
-        return FileResponse(FRONTEND_DIR / "index.html")
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa(full_path: str) -> FileResponse:
+        """
+        Serve the single-page app for every non-API path.
 
-    @app.get("/dashboard", include_in_schema=False)
-    async def dashboard() -> FileResponse:
-        return FileResponse(FRONTEND_DIR / "dashboard.html")
+        React Router owns /, /welcome and /dashboard on the client, so a hard
+        refresh on any of them has to return index.html rather than a 404.
+        """
+        candidate = (DIST_DIR / full_path).resolve()
+        # A request for a real file (favicon, icon, …) is served as itself; a
+        # request for a *missing* file must 404 instead of silently returning
+        # HTML, which would otherwise show up as a confusing parse error.
+        if full_path and "." in Path(full_path).name:
+            if candidate.is_file() and candidate.is_relative_to(DIST_DIR):
+                return FileResponse(candidate)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+        return FileResponse(INDEX_FILE)
+
+else:
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def build_missing(full_path: str) -> HTMLResponse:
+        """The API works, but nobody built the frontend yet — say so plainly."""
+        logger.warning("frontend/dist is missing — run `npm run build` in frontend/")
+        return HTMLResponse(BUILD_MISSING_PAGE, status_code=503)
 
 
 if __name__ == "__main__":

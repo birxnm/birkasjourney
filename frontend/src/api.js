@@ -7,7 +7,7 @@
 
 const TOKEN_KEY = "bj_token";
 
-const Auth = {
+export const Auth = {
   get token() {
     return localStorage.getItem(TOKEN_KEY);
   },
@@ -25,7 +25,7 @@ const Auth = {
 };
 
 /** Thrown for any non-2xx response, carrying the server's message. */
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(message, status) {
     super(message);
     this.name = "ApiError";
@@ -89,7 +89,7 @@ async function request(path, options = {}) {
   return payload;
 }
 
-const API = {
+export const API = {
   // Auth
   register: (body) => request("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
   login: (body) => request("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
@@ -98,6 +98,10 @@ const API = {
 
   // Habits
   habits: () => request("/api/habits"),
+  createHabit: (body) => request("/api/habits", { method: "POST", body: JSON.stringify(body) }),
+  updateHabit: (id, body) =>
+    request(`/api/habits/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteHabit: (id) => request(`/api/habits/${id}`, { method: "DELETE" }),
   today: () => request("/api/habits/today"),
   log: (body) => request("/api/habits/log", { method: "POST", body: JSON.stringify(body) }),
   deleteLog: (habitName) => request(`/api/habits/log/${habitName}`, { method: "DELETE" }),
@@ -112,18 +116,3 @@ const API = {
   createReminder: (body) => request("/api/reminders", { method: "POST", body: JSON.stringify(body) }),
   deleteReminder: (id) => request(`/api/reminders/${id}`, { method: "DELETE" }),
 };
-
-/** Brief bottom-centre toast; `isError` tints the border red. */
-function toast(message, isError = false) {
-  let el = document.querySelector(".toast");
-  if (!el) {
-    el = document.createElement("div");
-    el.className = "toast";
-    document.body.appendChild(el);
-  }
-  el.textContent = message;
-  el.classList.toggle("error", isError);
-  el.classList.add("show");
-  clearTimeout(el._timer);
-  el._timer = setTimeout(() => el.classList.remove("show"), 3200);
-}

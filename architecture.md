@@ -46,24 +46,49 @@ FastAPI lifespan starts bot polling and the reminder scheduler as asyncio tasks.
 | `backend/bot/keyboards.py`    | Inline keyboards for one-tap logging                        |
 | `backend/bot/bot_services.py` | Command parsing and Telegram message formatting             |
 | `backend/bot/runner.py`       | Bot lifecycle: build, poll, shut down                       |
-| `backend/tests/`              | API and bot test scripts                                    |
-| `frontend/`                   | Static dashboard (HTML/CSS/vanilla JS + Chart.js)           |
-| `backend/requirements.txt`    | Pinned dependencies                                         |
+| `backend/tests/`              | API, habit, bot, and persistence test scripts               |
+| `frontend/src/`               | React dashboard (Vite build → `frontend/dist`)              |
+| `backend/requirements.txt`    | Pinned Python dependencies                                  |
+| `frontend/package.json`       | Pinned frontend dependencies                                |
 | `backend/.env` / `.env.example` | Secrets / template                                        |
+
+### Frontend modules
+
+| File                                    | Role                                          |
+|-----------------------------------------|-----------------------------------------------|
+| `frontend/src/main.jsx`                 | Mounts React, error boundary, toast provider  |
+| `frontend/src/App.jsx`                  | Route guard and page switch                   |
+| `frontend/src/router.js`                | History-API routing for the three pages       |
+| `frontend/src/api.js`                   | The only place that calls the backend         |
+| `frontend/src/habits.js`                | Time ↔ decimal conversion, value formatting   |
+| `frontend/src/pages/AuthPage.jsx`       | Log in / create account                       |
+| `frontend/src/pages/WelcomePage.jsx`    | Where a fresh sign-in lands                   |
+| `frontend/src/pages/DashboardPage.jsx`  | Owns the dashboard data and one refresh()     |
+| `frontend/src/components/AddHabitModal.jsx` | The Add Habit form (Radix dialog)         |
+| `frontend/src/components/IconPicker.jsx`, `ColorPicker.jsx`, `CategorySelect.jsx`, `TargetDays.jsx` | The four field pickers |
+| `frontend/src/components/TodayHabits.jsx`, `MyHabits.jsx`, `EmptyState.jsx` | Habit lists and the first-run prompt |
+| `frontend/src/components/LogForm.jsx`, `Charts.jsx`, `QuotesCard.jsx`, `RemindersCard.jsx` | The remaining dashboard cards |
+| `frontend/src/styles/`                  | Design tokens (`global.css`) and the new components (`habits.css`) |
 
 ## Startup sequence (`main.py` lifespan)
 
 1. Load settings from `backend/.env`; warn (don't crash) if `BOT_TOKEN` is missing.
 2. Create the six tables if they don't exist.
-3. Seed the six habit definitions (`INSERT OR IGNORE`, so restarts are safe).
-4. Seed the quotes, but only if the `quotes` table is empty.
-5. If `BOT_TOKEN` is set: start bot polling and the reminder scheduler as background
+3. Run `migrate_db()` — adds the habit columns introduced after the first release and
+   replaces the old global `UNIQUE` on `habits.name`. It is idempotent, so a fresh
+   install and an upgraded one end up with the same schema.
+4. Seed the six built-in habit definitions (`INSERT OR IGNORE`, so restarts are safe).
+5. Seed the quotes, but only if the `quotes` table is empty.
+6. If `BOT_TOKEN` is set: start bot polling and the reminder scheduler as background
    tasks. Without a token the web API still serves — the bot is simply disabled.
-6. On shutdown: cancel the scheduler, stop polling, close the bot's HTTP session.
+7. On shutdown: cancel the scheduler, stop polling, close the bot's HTTP session.
+
+The built dashboard is served from `frontend/dist`. If it hasn't been built, every
+non-API path returns a 503 page saying to run `npm run build` — the API keeps working.
 
 ---
 
-## The six tracked habits
+## The six built-in habits
 
 | Habit         | DB name       | Target  | Unit    | Met when      |
 |---------------|---------------|---------|---------|---------------|
@@ -77,7 +102,27 @@ FastAPI lifespan starts bot polling and the reminder scheduler as asyncio tasks.
 The two time habits are stored as **decimal hours** (22:30 → 22.5) so they can be
 compared and averaged with ordinary arithmetic. `services.time_str_to_decimal` and
 `decimal_to_time_str` are the only places that conversion happens on the backend;
-`frontend/js/habits.js` mirrors it for the browser.
+`frontend/src/habits.js` mirrors it for the browser.
+
+### Habits the user adds
+
+Alongside the six built-ins, a user can create their own from the dashboard. Those are
+**binary** habits: there is no value to enter, only "done today", and the goal is a
+number of days per week rather than a daily amount.
+
+| | Built-in | User-created |
+|---|---|---|
+| `user_id` | `NULL` — visible to everyone | the owner's id — visible only to them |
+| `kind` | `measured` | `binary` |
+| Goal | `target_value` per day | `target_days` per week |
+| Completed when | value meets `target_value` | logged at all (value 1) |
+| Editable / deletable | no | by the owner only |
+
+The storage `name` is derived from what the user typed: *"Morning Run"* → `morning_run`,
+which is what `/log morning_run` uses in Telegram. A name with no Latin letters (Cyrillic,
+for instance) has no readable slug, so it falls back to a stable digest of the name —
+the same input always produces the same slug, which is what keeps the duplicate check
+working.
 
 ---
 
@@ -132,17 +177,37 @@ A user can arrive from either side: `/start` in Telegram creates a row with only
 `/link <code>` merges the two by writing `telegram_id` onto the web row. Both columns
 are `UNIQUE`, so one Telegram account cannot be linked to two web accounts.
 
-### `habits` — the six definitions (reference table)
+### `habits` — the built-in six plus each user's own
 
 | Field          | Type    | Required | Purpose                             |
 |----------------|---------|----------|-------------------------------------|
 | `id`           | INTEGER | PK       | Habit id                            |
-| `name`         | TEXT    | NOT NULL, UNIQUE | Machine name (`water`, `sleep`, …) |
+| `user_id`      | INTEGER | optional, FK | `NULL` for a built-in; the owner for a custom habit |
+| `name`         | TEXT    | NOT NULL | Machine name (`water`, `morning_run`, …) |
 | `display_name` | TEXT    | NOT NULL | Label shown to the user             |
-| `target_value` | REAL    | optional | Daily goal                          |
+| `kind`         | TEXT    | NOT NULL | `measured` (value vs target) or `binary` (done or not) |
+| `target_value` | REAL    | optional | Daily goal, measured habits          |
+| `target_days`  | INTEGER | NOT NULL | Days a week, binary habits (1–7)     |
 | `unit`         | TEXT    | optional | `litres`, `steps`, `time`, …        |
 | `icon`         | TEXT    | optional | Emoji                               |
+| `color`        | TEXT    | optional | `#rrggbb`, chosen in the Add Habit form |
+| `category`     | TEXT    | optional | One of eight fixed categories        |
+| `notes`        | TEXT    | optional | Free text, up to 500 characters      |
 | `sort_order`   | INTEGER | default 0| Display order                       |
+| `is_archived`  | INTEGER | NOT NULL | `1` hides the habit without deleting it |
+
+`name` is unique **per owner**, not globally, enforced by two partial indexes:
+
+```sql
+CREATE UNIQUE INDEX habits_builtin_name ON habits(name) WHERE user_id IS NULL;
+CREATE UNIQUE INDEX habits_user_name    ON habits(user_id, name) WHERE user_id IS NOT NULL;
+```
+
+That is what lets two different users each have a habit called *Gym* while still
+stopping one user from creating it twice. SQLite cannot drop a column constraint, so
+`migrate_db()` rebuilds the table to remove the original global `UNIQUE`, carrying the
+ids over unchanged so existing `habit_logs` and `reminders` keep pointing at the right
+habit.
 
 ### `habit_logs` — one row per user, per habit, per day
 
@@ -227,7 +292,7 @@ Values are always passed separately from the SQL — never interpolated into the
 | Command             | Behavior                                                          |
 |---------------------|-------------------------------------------------------------------|
 | `/start`            | Create the user row on first contact; greeting + inline main menu  |
-| `/today`            | All six habits with values, progress bars, and percentages         |
+| `/today`            | Every habit the user tracks, with values, progress bars, and percentages |
 | `/log <habit> <value>` | Parse and validate → resolve `user_id` → save; no args opens the button picker |
 | `/quote`            | The three quotes assigned to this user today                       |
 | `/remind <HH:MM> <text>` | Validate the time and message → save a daily reminder         |
@@ -261,7 +326,10 @@ client cannot ask for someone else's data.
 | POST   | `/api/auth/login`             | Verify credentials, return a JWT      |
 | GET    | `/api/auth/me`                | Current user profile                  |
 | POST   | `/api/auth/link-code`         | Issue a 6-character, 5-minute code    |
-| GET    | `/api/habits`                 | The six habit definitions             |
+| GET    | `/api/habits`                 | The built-ins plus this user's own     |
+| POST   | `/api/habits`                 | Create a habit, optionally with a reminder |
+| PATCH  | `/api/habits/{id}`            | Edit a habit this user owns            |
+| DELETE | `/api/habits/{id}`            | Delete it, with its logs and reminders |
 | GET    | `/api/habits/today`           | Today's progress for all habits       |
 | POST   | `/api/habits/log`             | Record or overwrite an entry          |
 | DELETE | `/api/habits/log/{habit}`     | Clear an entry for a date             |
@@ -289,12 +357,18 @@ malformed JSON bodies.
 **Validation** happens before anything is persisted, at two levels:
 
 - *Shape* — Pydantic (`models.py`) for the web: email regex, password length,
-  `HH:MM` pattern, known habit names, non-negative values, ISO dates.
-- *Range and rules* — `services.validate_habit_value` for both front ends: water
-  0–20 L, steps 0–100 000, times 0–24 h, IELTS 0–1440 min, projects 0–50.
+  `HH:MM` pattern, habit-name format, `#rrggbb` colours, `target_days` 1–7, known
+  categories, non-negative values, ISO dates.
+- *Range and rules* — `services` for both front ends: water 0–20 L, steps 0–100 000,
+  times 0–24 h, IELTS 0–1440 min, projects 0–50, and 0 or 1 for a binary habit.
 
-The bot adds a parsing layer (`bot_services.parse_log_command`) that rejects unknown
-habits, non-numeric values, and times without `HH:MM` — each with a message that shows
+Whether a habit **exists** is deliberately not a schema check. A custom habit belongs to
+one account and is unknown to every other, so `services.log_habit_for_user` resolves the
+name within the caller's own scope and returns 400 with the names they do track.
+
+The bot adds a parsing layer (`bot_services.parse_log_command`) that resolves aliases,
+rejects non-numeric values and times without `HH:MM`, and passes an unrecognised name
+through as a custom-habit slug for services to judge — each with a message that shows
 the correct form.
 
 **Error handling** covers the four required categories:
@@ -328,7 +402,11 @@ detail goes to the log, and the user sees what happened and what to do next.
 
 Deliberately not built, and worth naming in the defense as known scope:
 
-- Per-user habit targets and custom habits (targets are currently global).
+- Per-user targets on the **built-in** six (their targets are still global; a user who
+  wants a different goal creates their own habit).
+- Editing a custom habit from the UI (the `PATCH` endpoint exists and is tested; the
+  dashboard offers create and delete only).
+- Archiving from the UI (`is_archived` is in the schema and honoured by every query).
 - Editing a past day from the web UI (the API supports it; the UI logs today only).
 - Reminder snooze / one-off reminders.
 - Password reset and email verification.

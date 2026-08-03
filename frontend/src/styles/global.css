@@ -1,0 +1,726 @@
+/*
+ * global.css — Birka's Journey design system.
+ *
+ * Flat and bright: white paper, near-black chunky type, and four saturated
+ * brand colours used as whole surfaces rather than accents. No blur, no
+ * gradients, no glass — a card is a solid block with a big radius.
+ *
+ * The entry pages (welcome, sign in) invert this onto solid indigo; that
+ * treatment lives in habits.css alongside the pages that use it.
+ *
+ * Everything below is driven by the tokens in :root, so the whole theme can be
+ * retuned from one place.
+ */
+
+@import "@fontsource-variable/archivo/index.css";
+
+/* ─── Tokens ──────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Brand — the four colours from the style sheet. Identical in both themes. */
+  --indigo: #4e55e0;
+  --lime: #b8eb6c;
+  --yellow: #f7cd63;
+  --pink: #fc8fc6;
+
+  /* Surfaces */
+  --bg: #ffffff;        /* the page itself */
+  --paper: #ffffff;     /* cards and the dialog */
+  --paper-2: #f2f2f7;   /* inputs, inactive tabs, tracks */
+  --paper-3: #e8e8f0;   /* hover on the above */
+  --line: #e2e2ec;
+
+  /* Text */
+  --ink: #16161d;
+  --ink-muted: #5f5f6e;
+  --ink-faint: #8a8a9a;
+  --ink-hover: #2c2c3a; /* the dark pill, hovered */
+
+  /*
+   * Text ON an --ink surface — the dark pill used for primary buttons, the
+   * active tab, and the reminder time. Inverts with the theme, since --ink does.
+   */
+  --on-ink: #ffffff;
+
+  /*
+   * Text on a brand colour. Deliberately does NOT change between themes: the
+   * four brand colours don't either, and dark type is what clears 4.5:1 on all
+   * of them. Any surface painted lime/yellow/pink must set this rather than let
+   * --ink through, or it goes light-on-light in dark mode.
+   */
+  --on-brand: #16161d;
+
+  /*
+   * A paler lime, for small text on the indigo entry pages. The brand lime only
+   * reaches 4.09:1 against indigo — fine for a big headline (needs 3:1), short
+   * of AA for anything at body size.
+   */
+  --lime-soft: #d7f59b;
+
+  /*
+   * Status. --danger is dark enough to carry white text at 5.4:1 — the lighter
+   * red this started as only reached 3.7:1, which fails.
+   */
+  --success: #3aa06a;
+  --danger: #c2352c;
+  --alert-error-text: #7f1d1a;
+  --alert-error-bg: #fde2e0;
+  --alert-success-text: #14532d;
+  --alert-success-bg: #dcf3e5;
+
+  /* Fully rounded, in the manner of the reference. */
+  --radius: 26px;
+  --radius-sm: 16px;
+  --radius-pill: 999px;
+  --space: 1rem;
+
+  /* One soft lift, only where a surface needs to float (dialog, toast). */
+  --shadow: 0 12px 32px rgba(22, 22, 45, 0.14);
+
+  --font: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+
+/*
+ * Dark theme. Only the surface and text tokens move — the brand colours and
+ * --on-brand stay put, so every coloured block looks the same in both themes.
+ * theme.js sets this attribute; index.html sets it again before first paint.
+ */
+:root[data-theme="dark"] {
+  --bg: #0e0e13;
+  --paper: #191921;
+  --paper-2: #23232e;
+  --paper-3: #2f2f3c;
+  --line: #2b2b37;
+
+  --ink: #f2f2f7;
+  --ink-muted: #a3a3b4;
+  --ink-faint: #8b8b9c;
+  --ink-hover: #dcdce6;
+
+  --on-ink: #0e0e13;
+
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  /* Tinted for a dark surface; the light values wash out completely. */
+  --alert-error-text: #ffc9c4;
+  --alert-error-bg: #3d1a17;
+  --alert-success-text: #b9e9cc;
+  --alert-success-bg: #15301f;
+}
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/*
+ * Headings carry the style: heavy, slightly wide, tightly tracked. Archivo is
+ * variable, so the weight is real rather than synthesised.
+ */
+h1, h2, h3 {
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+a {
+  color: var(--indigo);
+  font-weight: 600;
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+/* ─── Surfaces ────────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  padding: calc(var(--space) * 1.35);
+}
+
+/* Stacked cards in a column need separating… */
+.card + .card { margin-top: var(--space); }
+
+/* …but a grid already spaces its children with gap. Without this the margin is
+   added on top of the gap and, worse, eats into each item's stretched height —
+   which is what made the four stat tiles come out uneven. */
+.grid > .card + .card { margin-top: 0; }
+
+/*
+ * A card can take a brand colour instead of white. The border goes to the same
+ * colour so the block reads as one solid shape, and the text is pinned to
+ * --on-brand so it stays dark in both themes.
+ */
+.card-lime   { background: var(--lime);   border-color: var(--lime);   color: var(--on-brand); }
+.card-yellow { background: var(--yellow); border-color: var(--yellow); color: var(--on-brand); }
+.card-pink   { background: var(--pink);   border-color: var(--pink);   color: var(--on-brand); }
+.card-indigo {
+  background: var(--indigo);
+  border-color: var(--indigo);
+  color: #fff;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space);
+  margin-bottom: var(--space);
+  font-size: 1.1rem;
+}
+
+/* ─── Layout ──────────────────────────────────────────────────────────────── */
+
+.container {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: calc(var(--space) * 1.5)
+           max(var(--space), env(safe-area-inset-right))
+           calc(var(--space) * 3 + env(safe-area-inset-bottom))
+           max(var(--space), env(safe-area-inset-left));
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space);
+  flex-wrap: wrap;
+  margin-bottom: calc(var(--space) * 1.5);
+}
+
+.topbar h1 {
+  font-size: clamp(1.5rem, 5vw, 2.1rem);
+  /* The greeting is the loudest thing on the page, as in the reference. */
+  letter-spacing: -0.035em;
+}
+.topbar .sub { color: var(--ink-muted); font-size: 0.88rem; }
+
+/* A greeting that doubles as a link back to the welcome page. */
+.linklike {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--lime);
+  text-underline-offset: 3px;
+}
+.linklike:hover { text-decoration-color: var(--indigo); }
+
+.grid {
+  display: grid;
+  gap: var(--space);
+}
+
+/*
+ * Grid children default to min-width: auto, so one wide child — a chart canvas
+ * sized for a desktop, a long unbroken word — keeps the whole column at that
+ * width. Without this the layout stays desktop-wide after a phone is rotated
+ * or a window is narrowed, and only a reload fixes it.
+ */
+.grid > * { min-width: 0; }
+
+.grid-stats {
+  grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
+  align-items: stretch;
+}
+.grid-main { grid-template-columns: 1fr; }
+
+@media (min-width: 60rem) {
+  .grid-main { grid-template-columns: 2fr 1fr; align-items: start; }
+}
+
+/* ─── Stat tiles ──────────────────────────────────────────────────────────── */
+
+/*
+ * The four stats cycle through the brand colours, which is what gives the top
+ * of the dashboard its colour-blocked look. nth-child rather than a class per
+ * tile, so the markup stays about meaning.
+ */
+.stat {
+  text-align: left;
+  border-radius: var(--radius);
+}
+
+.grid-stats .stat:nth-child(1),
+.grid-stats .stat:nth-child(2),
+.grid-stats .stat:nth-child(3) { color: var(--on-brand); }
+
+.grid-stats .stat:nth-child(1) { background: var(--lime);   border-color: var(--lime); }
+.grid-stats .stat:nth-child(2) { background: var(--yellow); border-color: var(--yellow); }
+.grid-stats .stat:nth-child(3) { background: var(--pink);   border-color: var(--pink); }
+.grid-stats .stat:nth-child(4) {
+  background: var(--indigo);
+  border-color: var(--indigo);
+  color: #fff;
+}
+
+.stat .label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  /*
+   * Dark type on a colour, so the label darkens rather than greys out. 0.72 is
+   * the lowest that still clears 4.5:1 on the palest of the three tints.
+   */
+  opacity: 0.72;
+}
+
+/* White at 0.72 on indigo would only reach 3.6:1, so that tile needs more. */
+.grid-stats .stat:nth-child(4) .label { opacity: 0.9; }
+
+.stat .value {
+  font-size: clamp(1.7rem, 6vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-top: 0.1rem;
+  font-variant-numeric: tabular-nums;
+  /*
+   * Fixed, because the streak value carries an emoji. Emoji come from a
+   * fallback font with a taller line box, which otherwise makes that one tile
+   * taller than the other three.
+   */
+  line-height: 1.2;
+}
+
+/* ─── Forms ───────────────────────────────────────────────────────────────── */
+
+.field { margin-bottom: var(--space); }
+
+label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  background: var(--paper);
+  border-color: var(--indigo);
+}
+
+input::placeholder, textarea::placeholder { color: var(--ink-faint); }
+
+/* ─── Buttons ─────────────────────────────────────────────────────────────── */
+
+/*
+ * Pill-shaped, heavy label, no gradient. The default is a quiet grey pill; the
+ * loud ones below take a brand colour.
+ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1.35rem;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, opacity 0.15s;
+}
+
+.btn:hover:not(:disabled) { background: var(--paper-3); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/*
+ * The one high-contrast button, as in the reference's "Finish" and its active
+ * date pill. It's a dark pill on the light theme and a light pill on the dark
+ * one — both are the strongest button the theme has.
+ */
+.btn-primary {
+  color: var(--on-ink);
+  background: var(--ink);
+}
+.btn-primary:hover:not(:disabled) { background: var(--ink-hover); }
+
+.btn-block { width: 100%; }
+.btn-sm { padding: 0.45rem 0.9rem; font-size: 0.82rem; }
+
+/* The invitation to start a new habit — lime, the brand's "go" colour. */
+.btn-add {
+  color: var(--on-brand);
+  background: var(--lime);
+}
+.btn-add:hover:not(:disabled) { background: #a9e152; }
+
+.btn-done {
+  color: var(--on-brand);
+  background: var(--lime);
+}
+.btn-done:hover:not(:disabled) { background: #a9e152; }
+
+/* White stays white here in both themes — the red doesn't change. */
+.btn-danger {
+  color: #fff;
+  background: var(--danger);
+}
+.btn-danger:hover:not(:disabled) { background: #a92c24; }
+
+/*
+ * On a coloured card the grey pill disappears, so buttons there switch to a
+ * white pill instead — which also means their label has to be pinned dark.
+ */
+.card-lime .btn, .card-yellow .btn, .card-pink .btn {
+  color: var(--on-brand);
+  background: rgba(255, 255, 255, 0.72);
+}
+.card-lime .btn:hover:not(:disabled),
+.card-yellow .btn:hover:not(:disabled),
+.card-pink .btn:hover:not(:disabled) {
+  background: #fff;
+}
+
+/*
+ * Keyboard focus must stay visible on every control. Fields are left out on
+ * purpose — their 2px indigo focus border is already the indicator, and adding
+ * an outline on top of it draws a double ring.
+ */
+.btn:focus-visible,
+.tab:focus-visible,
+.linklike:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+/* ─── Tabs ────────────────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  margin-bottom: calc(var(--space) * 1.25);
+  background: var(--paper-2);
+  border-radius: var(--radius-pill);
+}
+
+.tab {
+  flex: 1;
+  padding: 0.55rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+/* The selected tab becomes the dark pill. */
+.tab.active {
+  color: var(--on-ink);
+  background: var(--ink);
+}
+
+/* ─── Habit rows ──────────────────────────────────────────────────────────── */
+
+.habit {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 0;
+  border-bottom: 2px solid var(--line);
+}
+
+.habit:last-child { border-bottom: none; }
+
+/* The icon sits in its own rounded tile, like the reference's habit cards. */
+.habit-icon {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  font-size: 1.3rem;
+  background: var(--paper-2);
+  border-radius: 14px;
+}
+
+.habit-name { font-weight: 700; font-size: 0.98rem; letter-spacing: -0.015em; }
+
+.habit-meta {
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.habit-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+.bar {
+  height: 8px;
+  margin-top: 0.45rem;
+  background: var(--paper-2);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--indigo);
+  transition: width 0.4s ease;
+}
+
+.bar.done > span { background: var(--success); }
+
+/* ─── Quotes & reminders ──────────────────────────────────────────────────── */
+
+.quote {
+  padding: 0.85rem 0;
+  border-bottom: 2px solid var(--line);
+}
+.quote:last-child { border-bottom: none; }
+.quote p { font-size: 0.95rem; font-weight: 500; }
+.quote cite {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+
+/* Quotes card sits on yellow, so its dividers need to read on that. */
+.card-yellow .quote { border-bottom-color: rgba(22, 22, 29, 0.14); }
+
+/* 0.62 only reached 4.33:1 against the yellow; 0.75 clears AA at this size. */
+.card-yellow .quote cite { color: rgba(22, 22, 29, 0.75); }
+
+.reminder {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0;
+  border-bottom: 2px solid var(--line);
+  font-size: 0.9rem;
+}
+.reminder:last-child { border-bottom: none; }
+
+.reminder .time {
+  padding: 0.15rem 0.6rem;
+  font-weight: 800;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--on-ink);
+  background: var(--ink);
+  border-radius: var(--radius-pill);
+}
+
+.reminder .text { flex: 1; color: var(--ink-muted); }
+
+/* ─── Feedback ────────────────────────────────────────────────────────────── */
+
+.alert {
+  padding: 0.8rem 1rem;
+  margin-bottom: var(--space);
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+}
+
+.alert-error {
+  color: var(--alert-error-text);
+  background: var(--alert-error-bg);
+}
+
+.alert-success {
+  color: var(--alert-success-text);
+  background: var(--alert-success-bg);
+}
+
+.empty {
+  padding: 1.25rem 0;
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+}
+
+/* --ink-faint is tuned for white and washes out on a tint. */
+.card-lime .empty,
+.card-yellow .empty,
+.card-pink .empty {
+  color: rgba(22, 22, 29, 0.72);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translate(-50%, 4rem);
+  padding: 0.8rem 1.3rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--on-ink);
+  background: var(--ink);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  z-index: 80;
+}
+
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* The red is the same in both themes, so its label can't use --on-ink. */
+.toast.error { color: #fff; background: var(--danger); }
+
+/* ─── Charts ──────────────────────────────────────────────────────────────── */
+
+.chart-box {
+  position: relative;
+  height: clamp(12rem, 45vw, 17rem);
+}
+
+/* Chart.js writes pixel dimensions onto the canvas; cap it so a stale size
+   can never widen the card it sits in. */
+.chart-box > canvas { max-width: 100%; }
+
+.code-pill {
+  display: inline-block;
+  padding: 0.35rem 0.8rem;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #fff;
+  background: var(--indigo);
+  border-radius: var(--radius-sm);
+}
+
+.muted { color: var(--ink-muted); font-size: 0.85rem; }
+.row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; }
+.row > .field { flex: 1 1 8rem; margin-bottom: 0; }
+.row > .btn { flex: 0 0 auto; }
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+/*
+ * Three sizes: phone (< 40rem), tablet (40–60rem), desktop (≥ 60rem — the
+ * two-column .grid-main rule lives up with the layout section). Everything
+ * below is what changes away from the desktop default.
+ */
+
+/* Phones */
+@media (max-width: 40rem) {
+  :root {
+    --space: 0.85rem;
+    --radius: 22px;
+    --radius-sm: 14px;
+  }
+
+  .card { padding: var(--space); }
+
+  /* The header collapses to a title with the actions beneath it */
+  .topbar { gap: 0.6rem; }
+  .topbar > div:last-child { width: 100%; }
+  .topbar .btn { flex: 1; }
+
+  .grid-stats { grid-template-columns: repeat(2, 1fr); }
+  .stat .label { font-size: 0.66rem; }
+
+  /* Save button drops to its own full-width line under the two fields */
+  .row > .btn { flex: 1 1 100%; }
+
+  .card-title { flex-wrap: wrap; }
+  .card-title select { width: 100%; }
+
+  .habit { grid-template-columns: 2.25rem 1fr auto; gap: 0.65rem; }
+  .habit-icon { width: 2.25rem; height: 2.25rem; font-size: 1.15rem; border-radius: 12px; }
+  .habit-name { font-size: 0.92rem; }
+}
+
+/* Tablets — stats go 4-up, the main grid stays single column */
+@media (min-width: 40rem) and (max-width: 60rem) {
+  .grid-stats { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Wide desktops get a little more room */
+@media (min-width: 90rem) {
+  .container { max-width: 84rem; }
+}
+
+/*
+ * Touch devices: hover styling never applies, and every control needs a
+ * finger-sized hit area. 44px is the Apple/Android minimum.
+ */
+@media (hover: none) {
+  .btn, .tab, select, input {
+    min-height: 44px;
+  }
+  .btn-sm {
+    min-height: 38px;
+    padding: 0.45rem 0.9rem;
+  }
+  .habit-actions .btn {
+    min-width: 38px;
+  }
+  .btn:hover:not(:disabled) { background: var(--paper-2); }
+  .btn-primary:hover:not(:disabled) { background: var(--ink); }
+  .btn-add:hover:not(:disabled), .btn-done:hover:not(:disabled) { background: var(--lime); }
+}
+
+/* Honour a reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Printing the dashboard for the report: drop the colour blocks */
+@media print {
+  body { background: #fff; color: #000; }
+  .card, .stat {
+    background: #fff !important;
+    color: #000 !important;
+    border: 1px solid #ccc !important;
+  }
+  .topbar .btn, .toast, form { display: none; }
+}

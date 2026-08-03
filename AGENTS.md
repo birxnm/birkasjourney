@@ -47,13 +47,59 @@ criteria, not suggestions. Full mapping in `requirements.md`.
 - **Web API:** `FastAPI` + `uvicorn`, with `pydantic` schemas for request validation
 - **Database:** SQLite via `aiosqlite` (async) — no ORM
 - **Auth:** `PyJWT`, plus PBKDF2 password hashing from the standard library
-- **Frontend:** static HTML/CSS/vanilla JS; Chart.js from a CDN. No build step, no
-  frontend framework.
+- **Frontend:** **React 19 + Vite**, plain JSX (no TypeScript). Radix UI primitives for
+  the dialog, switch, and select; `chart.js` + `react-chartjs-2` for the charts; plain
+  CSS driven by the tokens in `frontend/src/styles/global.css` (no Tailwind, no CSS-in-JS).
+  Routing is the ~30-line History-API hook in `frontend/src/router.js` — three routes do
+  not justify a routing library.
+- **Typeface:** `@fontsource-variable/archivo`, bundled by Vite. Self-hosted on purpose —
+  no Google Fonts request, so the app still renders offline. Archivo covers Latin and
+  Latin Extended but **not Cyrillic**: a habit named in Cyrillic falls back to the system
+  sans. Swap the font if that becomes a problem.
 - **Config:** `python-dotenv`
-- **Dependencies:** pinned in `backend/requirements.txt`
+- **Dependencies:** pinned in `backend/requirements.txt` and `frontend/package.json`
 
-Do not add heavy dependencies (ORMs, message queues, frontend build tooling). Prefer
-the standard library and the packages above.
+Do not add heavy dependencies (ORMs, message queues, state-management libraries, UI kits).
+Prefer the standard library and the packages above. `npm audit` must stay clean — if a
+dependency's only clean version is missing features we need, drop the dependency rather
+than shipping the advisory.
+
+> The frontend was static HTML/CSS/vanilla JS until the custom-habits feature. It moved
+> to React so the Add Habit form, the pickers, and the habit lists could be components
+> with real state. The trade: the project now needs `npm install && npm run build` before
+> `uvicorn` can serve the dashboard.
+
+**Visual language** — flat and bright, not the dark glassmorphism it started as. Four
+brand colours (`--indigo #4e55e0`, `--lime #b8eb6c`, `--yellow #f7cd63`, `--pink #fc8fc6`),
+near-black chunky type. Rules that matter when adding UI:
+
+- **No blur, no gradients, no drop shadows** except `--shadow` on the dialog and the toast.
+- A card is a **solid block** with a big radius; a coloured card sets its border to the
+  same colour. Buttons are pills; the one high-contrast button is `.btn-primary`.
+- The entry pages (`.entry` — welcome, sign in) invert onto solid indigo with lime accents,
+  in both themes. The dashboard follows the theme.
+
+**Light and dark** — `theme.js` writes `<html data-theme>`; `:root[data-theme="dark"]` in
+`global.css` swaps the surface and text tokens. The brand colours do **not** change, which
+is what makes the three text tokens load-bearing:
+
+| Token | Use it for | Flips with theme? |
+|---|---|---|
+| `--ink` / `--on-ink` | text on the page; text on an `--ink` surface (the primary pill) | yes |
+| `--on-brand` | text, icons, or borders drawn on a lime/yellow/pink/user-chosen fill | **no** |
+| `--lime-soft` | lime text at body size on indigo (brand lime is only 4.09:1 there) | no |
+
+- Painting a surface a brand colour? **Set `color: var(--on-brand)` on it.** Letting `--ink`
+  through looks fine in light mode and goes light-on-lime in dark. Same for SVG `fill`/
+  `stroke` over a brand fill — see `Mascot.jsx`.
+- A habit's own colour becomes its card background, so its label colour comes from
+  `textOn()` in `src/habits.js` — never hardcode dark or white over a user-chosen colour.
+- Chart.js paints to canvas and can't read CSS variables: `chartColors()` in `Charts.jsx`
+  resolves them from the document, and `theme` is in the `useMemo` deps so charts repaint
+  on a toggle.
+- **Every text pairing must clear AA** (4.5:1, or 3:1 at ≥24px or ≥18.66px bold), in both
+  themes. `scratchpad/contrast.mjs` in the QA notes audits every page automatically —
+  re-run it after touching colours rather than eyeballing it.
 
 ---
 
@@ -68,8 +114,9 @@ Browser  → routers/*.py    ─┘  (rules)       (SQL only)
    (parse/validate)
 ```
 
-Both front ends run in one process: `uvicorn main:app` serves the API and the static
-dashboard, and the FastAPI lifespan starts bot polling and the reminder scheduler.
+Both front ends run in one process: `uvicorn main:app` serves the API and the built
+dashboard from `frontend/dist`, and the FastAPI lifespan starts bot polling and the
+reminder scheduler.
 
 | File                     | Responsibility                                       |
 |--------------------------|------------------------------------------------------|
@@ -85,13 +132,26 @@ dashboard, and the FastAPI lifespan starts bot polling and the reminder schedule
 | `bot/keyboards.py`       | Inline keyboards (buttons)                           |
 | `bot/bot_services.py`    | Command parsing + Telegram formatting                |
 | `bot/runner.py`          | Bot lifecycle: build, poll, shut down                |
-| `tests/`                 | API, bot, and persistence test scripts               |
+| `tests/`                 | API, habit, bot, and persistence test scripts        |
 | `requirements.txt`       | Pinned dependencies                                  |
 | `.env` / `.env.example`  | Secrets (real / template)                            |
+
+The frontend mirrors that layering:
+
+| File                        | Responsibility                                     |
+|-----------------------------|----------------------------------------------------|
+| `src/api.js`                | The only module that calls the backend             |
+| `src/router.js`             | History-API routing                                |
+| `src/pages/*.jsx`           | One page each; owns that page's data and refresh   |
+| `src/components/*.jsx`      | Presentational, driven by props and local state    |
+| `src/habits.js`             | Shared habit maths and formatting                  |
+| `src/styles/*.css`          | Tokens and component styles                        |
 
 Rules:
 - Handlers and routers must **not** contain SQL. Database code must **not** contain
   Telegram or FastAPI objects.
+- Components must **not** call `fetch` directly — every request goes through `src/api.js`,
+  which is where the token, the 401 redirect, and network-error messages are handled once.
 - Business rules (e.g. "reject empty title", "only the owner can delete") live in
   `services.py`, not scattered across handlers.
 - If a file grows past one clear responsibility, split it and tell me why.
