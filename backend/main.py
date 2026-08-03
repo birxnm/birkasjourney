@@ -105,8 +105,13 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # MVP runs locally; tighten before any public deploy
-    allow_credentials=True,
+    # Set ALLOWED_ORIGINS to the deployed origin in production; it defaults to
+    # "*" for local development.
+    allow_origins=settings.ALLOWED_ORIGINS,
+    # Auth travels as an Authorization: Bearer header, not a cookie, so no
+    # credentialed requests are needed. Leaving this on alongside "*" is also
+    # something browsers reject outright.
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

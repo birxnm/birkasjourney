@@ -34,6 +34,15 @@ class Settings:
     APP_PORT: int = int(os.getenv("APP_PORT", "8000"))
     TIMEZONE: str = os.getenv("TIMEZONE", "Asia/Almaty")
 
+    # Browser origins allowed to call the API, comma-separated. In production
+    # this is the deployed site's own origin; "*" is only for local development,
+    # where the dashboard and the API are served from the same port anyway.
+    ALLOWED_ORIGINS: list[str] = [
+        origin.strip()
+        for origin in os.getenv("ALLOWED_ORIGINS", "*").split(",")
+        if origin.strip()
+    ]
+
     @classmethod
     def validate(cls) -> None:
         """Validate that all required settings are present."""

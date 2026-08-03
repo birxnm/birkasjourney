@@ -1,0 +1,29 @@
+# Keep the build context small, and keep secrets and local state out of the image.
+
+# Secrets — the host supplies these as environment variables instead.
+.env
+backend/.env
+
+# Local databases. The deployed app uses the mounted volume at /data.
+*.db
+*.db-wal
+*.db-shm
+*.db.bak
+
+# Installed and built artefacts — both stages produce their own.
+node_modules/
+frontend/node_modules/
+frontend/dist/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Not needed at runtime.
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+*.log
+*.md
