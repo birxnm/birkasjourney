@@ -1,0 +1,27 @@
+<!--
+  icon.svg — The app icon: the lime square mascot on the brand indigo.
+
+  Also the source the PNG icons are rendered from (see README's icon note), so
+  edit this one and re-render rather than touching the PNGs by hand.
+
+  The drawing is kept inside the central 60% of the canvas. That's the "safe
+  zone" Android maskable icons require: the launcher may crop the icon to a
+  circle, and anything outside that zone can be cut off.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#4e55e0" />
+
+  <!-- Body -->
+  <rect x="156" y="164" width="200" height="184" rx="60" fill="#b8eb6c" />
+
+  <!-- Face. Deliberately bolder than the in-app mascot so it still reads at 32px. -->
+  <circle cx="212" cy="238" r="16" fill="#16161d" />
+  <circle cx="300" cy="238" r="16" fill="#16161d" />
+  <path
+    d="M210 292q46 40 92 0"
+    fill="none"
+    stroke="#16161d"
+    stroke-width="16"
+    stroke-linecap="round"
+  />
+</svg>

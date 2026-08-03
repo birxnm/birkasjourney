@@ -126,6 +126,14 @@ unexpected console errors**.
 | 68 | Contrast in both themes | Audit every page in light and dark | Every text pairing clears AA — 4.5:1, or 3:1 at ≥24px / ≥18.66px bold | ✅ pass — automated walk of every text run on auth, welcome, dashboard, and the Add Habit dialog: 8/8 pages clean in both themes |
 | 69 | Coloured blocks keep dark type | Switch to dark and look at the stat tiles, habit blocks, and the quotes card | Text on lime/yellow/pink/user-chosen fills stays dark and legible; it does not invert with the theme | ✅ pass — pinned to `--on-brand`, which is theme-independent by design |
 
+## G. Installable web app
+
+| # | Check | Steps | Expected result | Result |
+|---|-------|-------|-----------------|--------|
+| 70 | Manifest and icons are served | Request `/manifest.webmanifest` and each icon it names | All 200, the manifest as `application/manifest+json` and the icons as `image/png` | ✅ pass — verified through the running app and again over the LAN address; manifest parses, `display: standalone`, 3 icon entries |
+| 71 | Reachable from a phone | Start with `--host 0.0.0.0`, open `http://<computer-ip>:8000` on the phone | The dashboard loads with no console or network errors | ✅ pass — loaded over the LAN address at 390×844, no console or failed requests |
+| 72 | Add to Home Screen | On the phone, Share → Add to Home Screen | Installs as *Birka's Journey* with the lime mascot icon and opens without browser chrome | ☐ to verify on the device — needs HTTPS on some iOS versions |
+
 ---
 
 ## Final MVP sign-off (the rubric's readiness gate)
@@ -138,7 +146,7 @@ unexpected console errors**.
       [architecture.md](architecture.md)
 - [x] Input validation on every user-provided value
 - [x] Error handling across all four categories — network, database, user, unexpected
-- [x] A manual QA checklist with ≥ 10 checks — this file, 69 rows
+- [x] A manual QA checklist with ≥ 10 checks — this file, 72 rows
 - [x] Launch instructions — [README.md](README.md)
 - [x] User isolation — every user-data query is scoped by `user_id`, including the
       habits a user creates

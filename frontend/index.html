@@ -6,6 +6,20 @@
     <meta name="theme-color" content="#ffffff" />
     <meta name="description" content="Birka's Journey — habit tracking with a Telegram bot and a web dashboard." />
     <title>Birka's Journey</title>
+
+    <!--
+      Installable web app. The manifest is what Android and iOS 16.4+ read for
+      the standalone display mode; the apple-* tags below cover older iOS, which
+      ignores the manifest entirely.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Birka's Journey" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <!--
       Set the theme before the first paint, or the page renders light for a
       frame and then flips. Kept inline and dependency-free on purpose; theme.js
