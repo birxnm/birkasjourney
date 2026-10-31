@@ -6,6 +6,7 @@
  */
 
 import { marquee } from "../data/profile.js";
+import Logo from "./Logo.jsx";
 
 function Strip({ items, className }) {
   return (
@@ -15,6 +16,7 @@ function Strip({ items, className }) {
           <ul key={copy} aria-hidden={copy === 1 ? "true" : undefined}>
             {items.map((item) => (
               <li key={item}>
+                <Logo name={item} />
                 {item}
                 <span className="strip-sep" aria-hidden="true">✦</span>
               </li>
