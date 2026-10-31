@@ -14,6 +14,8 @@ export const person = {
   tagline:
     "I build AI products for Kazakhstan — from RAG pipelines and Kazakh-speaking avatars to full-stack platforms — and take them from a hackathon idea to a global stage.",
   email: "k.birkhanym@gmail.com",
+  /* Path under public/, e.g. "/photo.jpg". null shows the BK monogram instead. */
+  photo: null,
   links: [
     { label: "LinkedIn", href: "https://www.linkedin.com/in/birkhanym-kazhymukhamet-668261337/" },
     { label: "GitHub", href: "https://github.com/birxnm" },
@@ -28,6 +30,12 @@ export const stats = [
   { value: "2 / 1,800", label: "Meta Llama Accelerator teams", color: "pink" },
   { value: "12 h → 10 s", label: "Clinical decision time with CortexAI", color: "indigo" },
 ];
+
+/* The two scrolling strips under the hero. */
+export const marquee = {
+  top: ["RAG", "KazLLM", "Llama", "FastAPI", "Django", "React", "Go", "STT / TTS", "Unreal Engine"],
+  bottom: ["Enactus World Cup Top 4", "GSEA Europe winner", "NVIDIA Inception", "Meta Llama Accelerator", "Dean's List"],
+};
 
 export const about = [
   "I'm a Software Engineering student at Astana IT University with a minor in Finance (GPA 3.67/4.00, Dean's List) and a resident of Tomorrow School's AI Developer & Engineering program at Astana Hub.",
