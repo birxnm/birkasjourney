@@ -470,30 +470,155 @@
 
 /* ─── Projects ────────────────────────────────────────────────────────────── */
 
-.projects {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
-  gap: 20px;
-}
+.projects-section { padding: 88px 0; }
 
-.project {
+/* Pinned mode: the section is as tall as the track's travel (set in JS) and
+   this inner block sticks to the viewport while the track slides. */
+.projects-section.is-pinned { padding: 0; }
+.is-pinned .projects-sticky {
+  position: sticky;
+  top: 68px;
+  height: calc(100vh - 68px);
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 32px;
-  border: 2px solid;
-  border-radius: var(--radius);
+  justify-content: center;
+  gap: 32px;
+  overflow: hidden;
 }
-.project h3 { font-size: clamp(1.6rem, 3vw, 2.1rem); }
+
+.projects-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.is-pinned .projects-head { margin-bottom: 0; }
+.projects-head h2 { font-size: clamp(2rem, 5vw, 3.25rem); }
+
+.projects-meter {
+  display: grid;
+  gap: 10px;
+  width: min(240px, 100%);
+}
+.projects-count {
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.projects-count small { font-size: 1rem; color: var(--ink-muted); }
+.projects-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--paper-2);
+}
+.projects-bar span {
+  display: block;
+  height: 100%;
+  background: var(--lime);
+  transform-origin: left;
+}
+
+/* The track starts aligned with the page container and runs off the right. */
+.projects-viewport {
+  --gutter: max(16px, calc((100vw - 1120px) / 2 + 32px));
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: var(--gutter);
+  scrollbar-width: none;
+}
+.projects-viewport::-webkit-scrollbar { display: none; }
+.is-pinned .projects-viewport { overflow: visible; }
+
+.projects-track {
+  display: flex;
+  gap: 20px;
+  width: max-content;
+  padding: 12px var(--gutter);
+  will-change: transform;
+}
+
+.projects-slide {
+  display: flex;
+  width: min(84vw, 460px);
+  scroll-snap-align: start;
+  perspective: 1000px;
+}
+.is-pinned .projects-slide { height: min(560px, calc(100vh - 260px)); }
+
+.project {
+  --rx: 0deg;
+  --ry: 0deg;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  padding: 32px;
+  /* Width and style only: the tone class sets the colour. */
+  border-width: 2px;
+  border-style: solid;
+  border-radius: var(--radius);
+  overflow: auto;
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.4s ease;
+}
+.project.is-tilting { transition: transform 0.08s linear; }
+.project h3 { font-size: clamp(1.8rem, 3vw, 2.4rem); }
 
 .project-meta {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   font-size: 0.9rem;
   font-weight: 700;
 }
+.project-index {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+.project-role { font-weight: 700; margin-top: -8px; }
+
+/* The closing slide: a big arrow card pointing to GitHub. */
+.projects-end a {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+  min-height: 320px;
+  padding: 32px;
+  border: 2px dashed var(--ink);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: background-color 0.2s, color 0.2s;
+}
+.projects-end a:hover {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+.end-kicker { font-weight: 700; color: inherit; opacity: 0.8; }
+.end-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.end-arrow {
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+.projects-end a:hover .end-arrow { transform: translateX(12px); }
 
 .project-highlights { display: grid; gap: 6px; }
 .project-highlights li {
