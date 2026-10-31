@@ -38,4 +38,4 @@ Add a project, a role, or an award there; the components lay it out.
 ## Previous project
 
 This repository used to hold *Birka's Journey*, a habit tracker with a Telegram
-bot and a web dashboard. That code is kept at the `birkas-journey-v1` tag.
+bot and a web dashboard. That code is kept on the `archive/birkas-journey` branch.
