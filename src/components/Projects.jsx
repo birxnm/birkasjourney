@@ -7,7 +7,8 @@
  * pixel left. Phones and reduced motion get a plain swipeable row with scroll
  * snapping instead — pinning fights touch scrolling.
  *
- * Either way, a counter and a progress bar follow where you are.
+ * Either way, a counter and a progress bar follow where you are, and a click
+ * on a card (or the arrow buttons) slides the next one in.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -93,15 +94,54 @@ export default function Projects() {
   const current = Math.min(total, Math.round(progress * (total - 1)) + 1);
 
   /*
-   * Tabbing onto a card the track hasn't slid to yet: scroll the page so it
-   * comes into view, since the browser can't scroll a transformed element.
+   * Moving between cards. A card's "position" is how far the track must
+   * travel to bring it to the front. Pinned, that travel is page scroll
+   * (the browser can't scroll a transformed element); otherwise it is the
+   * viewport's own horizontal scroll.
    */
-  const revealCard = (event) => {
-    if (!pinned) return;
-    const section = sectionRef.current;
-    const card = event.currentTarget;
-    const sectionTop = section.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({ top: sectionTop + card.offsetLeft - 32 });
+  const slides = () => Array.from(trackRef.current?.children ?? []);
+
+  const positionOf = (index) => {
+    const all = slides();
+    const target = all[Math.max(0, Math.min(index, all.length - 1))];
+    return target ? target.offsetLeft - all[0].offsetLeft : 0;
+  };
+
+  const currentPosition = () => {
+    if (!pinned) return viewportRef.current?.scrollLeft ?? 0;
+    return Math.max(0, -sectionRef.current.getBoundingClientRect().top);
+  };
+
+  const goTo = (index, smooth = true) => {
+    const behavior = smooth ? "smooth" : "auto";
+    const left = positionOf(index);
+    if (pinned) {
+      const sectionTop = sectionRef.current.getBoundingClientRect().top + window.scrollY;
+      const travel = sectionRef.current.offsetHeight - window.innerHeight;
+      window.scrollTo({ top: sectionTop + Math.min(left, travel), behavior });
+    } else {
+      viewportRef.current.scrollTo({ left, behavior });
+    }
+  };
+
+  /* The card at the front: the last one whose position we've reached. */
+  const frontIndex = () => {
+    const at = currentPosition();
+    return slides().reduce((front, _, index) => (positionOf(index) <= at + 8 ? index : front), 0);
+  };
+
+  /*
+   * Clicking a card: if it's already at the front, bring in the next one;
+   * otherwise bring this one to the front. Links inside keep working.
+   */
+  const onCardClick = (index) => (event) => {
+    if (event.target.closest("a")) return;
+    goTo(frontIndex() === index ? index + 1 : index);
+  };
+
+  /* Tabbing onto a card the track hasn't reached yet brings it into view. */
+  const onCardFocus = (index) => () => {
+    if (pinned) goTo(index, false);
   };
 
   return (
@@ -117,12 +157,20 @@ export default function Projects() {
             <p className="eyebrow">Projects</p>
             <h2 id="projects-title">Things I've built.</h2>
           </div>
-          <div className="projects-meter" aria-hidden="true">
-            <span className="projects-count">
+          <div className="projects-meter">
+            <div className="projects-nav">
+              <button type="button" className="icon-btn" aria-label="Previous project" onClick={() => goTo(frontIndex() - 1)}>
+                <span aria-hidden="true">←</span>
+              </button>
+              <button type="button" className="icon-btn" aria-label="Next project" onClick={() => goTo(frontIndex() + 1)}>
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+            <span className="projects-count" aria-hidden="true">
               {String(current).padStart(2, "0")}
               <small> / {String(total).padStart(2, "0")}</small>
             </span>
-            <span className="projects-bar">
+            <span className="projects-bar" aria-hidden="true">
               <span style={{ transform: `scaleX(${progress})` }} />
             </span>
           </div>
@@ -131,11 +179,16 @@ export default function Projects() {
         <div ref={viewportRef} className="projects-viewport">
           <ol ref={trackRef} className="projects-track">
             {projects.map((project, index) => (
-              <li key={project.name} className="projects-slide" onFocusCapture={revealCard}>
+              <li
+                key={project.name}
+                className="projects-slide"
+                onClick={onCardClick(index)}
+                onFocusCapture={onCardFocus(index)}
+              >
                 <TiltCard project={project} index={index + 1} />
               </li>
             ))}
-            <li className="projects-slide projects-end" onFocusCapture={revealCard}>
+            <li className="projects-slide projects-end" onFocusCapture={onCardFocus(projects.length)}>
               <a href={person.links.find((link) => link.label === "GitHub")?.href} target="_blank" rel="noreferrer">
                 <span className="end-kicker">That's not all</span>
                 <span className="end-title">More on GitHub</span>

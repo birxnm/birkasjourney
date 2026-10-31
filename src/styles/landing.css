@@ -499,9 +499,13 @@
 
 .projects-meter {
   display: grid;
-  gap: 10px;
-  width: min(240px, 100%);
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px 16px;
+  width: min(300px, 100%);
 }
+.projects-nav { display: flex; gap: 8px; grid-row: span 2; }
+.projects-slide:not(.projects-end) { cursor: pointer; }
 .projects-count {
   font-size: 2.4rem;
   font-weight: 800;
