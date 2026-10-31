@@ -44,3 +44,9 @@ the `archive/birkas-journey` branch.
 1. Plan before non-trivial changes; wait for confirmation.
 2. Keep edits narrow.
 3. Verify with `npm run build` and a look at the page at phone and desktop widths, light and dark.
+
+## Git
+
+- Commit as the repository owner. No AI attribution anywhere: no `Co-Authored-By`
+  or session trailers in commit messages, no "Generated with …" lines in PR
+  descriptions, no AI tool named as author or committer.
