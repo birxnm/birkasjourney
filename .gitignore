@@ -55,3 +55,6 @@ Thumbs.db
 # Test artefacts
 smoketest.db*
 habitstest.db*
+
+# Database backups
+*.db.bak
