@@ -166,7 +166,11 @@
 
 /* ─── Hero ────────────────────────────────────────────────────────────────── */
 
-.hero { padding: 72px 0 40px; }
+.hero {
+  padding: 72px 0 40px;
+  /* The stickers poke past the art box; never let them widen the page. */
+  overflow-x: clip;
+}
 
 .hero-kicker {
   display: inline-flex;
@@ -187,11 +191,230 @@
   box-shadow: 0 0 0 3px var(--indigo);
 }
 
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  align-items: center;
+  gap: 32px;
+}
+
+@media (max-width: 860px) {
+  .hero-grid { grid-template-columns: 1fr; }
+}
+
 .hero-title {
-  max-width: 14ch;
-  font-size: clamp(2.6rem, 8vw, 5.5rem);
+  font-size: clamp(2.6rem, 7vw, 5rem);
 }
 .hero-accent { color: var(--accent); }
+
+/* Each word rises out of its own mask, one after another. */
+.word {
+  display: inline-block;
+  overflow: hidden;
+  /* Room for descenders inside the mask, given back by the margin. */
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+  vertical-align: top;
+}
+.word > span {
+  display: inline-block;
+  animation: word-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i) * 70ms + 100ms);
+}
+
+@keyframes word-rise {
+  from { transform: translateY(105%); }
+  to { transform: none; }
+}
+
+/* The hand-drawn line under the last word, drawn in after the words land. */
+.underlined {
+  position: relative;
+  overflow: visible;
+}
+.squiggle {
+  position: absolute;
+  left: 0;
+  bottom: -0.12em;
+  width: 100%;
+  height: 0.28em;
+  overflow: visible;
+}
+.squiggle path {
+  fill: none;
+  stroke: var(--lime);
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-dasharray: 340;
+  stroke-dashoffset: 340;
+  animation: draw 0.9s ease-out 1.1s forwards;
+}
+
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* ─── Hero art: parallax stickers ─────────────────────────────────────────── */
+
+.hero-art {
+  --mx: 0;
+  --my: 0;
+  --sy: 0;
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  aspect-ratio: 1;
+  justify-self: center;
+}
+
+@media (max-width: 860px) {
+  .hero-art { max-width: 340px; margin-top: 16px; }
+}
+
+.shape {
+  position: absolute;
+  transform: translate3d(
+    calc(var(--mx) * var(--d) * 36px),
+    calc(var(--my) * var(--d) * 36px + var(--sy) * var(--d) * -0.12px),
+    0
+  );
+  transition: transform 0.25s ease-out;
+  animation: pop-in 0.7s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+
+.float { animation: float 6s ease-in-out infinite; animation-delay: var(--delay); }
+
+@keyframes float {
+  50% { translate: 0 -12px; }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; scale: 0.6; }
+}
+
+.shape-core   { inset: 14%; animation-delay: 0.3s; }
+.shape-circle { top: 0; left: 0; width: 32%; animation-delay: 0.5s; }
+.shape-star   { top: 2%; right: 0; width: 30%; animation-delay: 0.65s; }
+.shape-pill   { bottom: 6%; left: -4%; animation-delay: 0.8s; }
+.shape-ring   { bottom: 2%; right: 6%; width: 18%; animation-delay: 0.95s; }
+
+.shape-core .float,
+.shape-core .core { width: 100%; height: 100%; }
+
+.core {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 34%;
+  background: var(--indigo);
+  rotate: -5deg;
+  color: var(--lime);
+  font-size: clamp(4rem, 14vw, 8rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+.core img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  rotate: 5deg;
+  scale: 1.15;
+}
+
+.sticker {
+  display: grid;
+  place-items: center;
+  color: var(--on-brand);
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.circle {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--lime);
+  rotate: -12deg;
+  font-size: clamp(0.95rem, 2vw, 1.2rem);
+}
+
+.star {
+  position: relative;
+  aspect-ratio: 1;
+  rotate: 10deg;
+  font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+}
+.star svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--yellow);
+  animation: spin 24s linear infinite;
+}
+.star span { position: relative; }
+
+@keyframes spin {
+  to { rotate: 360deg; }
+}
+
+.pill {
+  padding: 14px 22px;
+  border-radius: var(--radius-pill);
+  background: var(--pink);
+  rotate: 6deg;
+  white-space: nowrap;
+  font-size: clamp(0.9rem, 1.8vw, 1.05rem);
+}
+
+.ring {
+  aspect-ratio: 1;
+  border: 8px solid var(--ink);
+  border-radius: 50%;
+}
+
+/* ─── Marquee ─────────────────────────────────────────────────────────────── */
+
+.marquee {
+  display: grid;
+  overflow: hidden;
+  padding: 48px 0 24px;
+}
+
+/* Two strips tilted towards each other so they cross near the right edge.
+   They are wider than the viewport so the rotated ends never show. */
+.strip {
+  width: 110%;
+  margin-left: -5%;
+  padding: 16px 0;
+  overflow: hidden;
+}
+.strip-indigo { background: var(--indigo); color: var(--lime); rotate: -1.5deg; margin-top: 6px; }
+.strip-yellow { background: var(--yellow); color: var(--on-brand); rotate: 1deg; }
+
+.strip-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 32s linear infinite;
+}
+.strip-yellow .strip-track { animation-direction: reverse; animation-duration: 40s; }
+
+.strip ul { display: flex; }
+.strip li {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding-right: 28px;
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.strip-sep { font-size: 0.7em; }
+
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
 
 .hero-lead {
   max-width: 60ch;
@@ -428,4 +651,8 @@
   padding-top: 24px;
   border-top: 2px solid rgba(255, 255, 255, 0.25);
   font-size: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .squiggle path { stroke-dashoffset: 0; }
 }
