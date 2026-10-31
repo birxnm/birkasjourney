@@ -14,8 +14,8 @@ export const person = {
   tagline:
     "I build AI products for Kazakhstan — from RAG pipelines and Kazakh-speaking avatars to full-stack platforms — and take them from a hackathon idea to a global stage.",
   email: "k.birkhanym@gmail.com",
-  /* Path under public/, e.g. "/photo.jpg". null shows the BK monogram instead. */
-  photo: null,
+  /* File in public/, prefixed with the build base. null shows the BK monogram instead. */
+  photo: `${import.meta.env.BASE_URL}photo.jpg`,
   links: [
     { label: "LinkedIn", href: "https://www.linkedin.com/in/birkhanym-kazhymukhamet-668261337/" },
     { label: "GitHub", href: "https://github.com/birxnm" },
