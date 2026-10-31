@@ -33,7 +33,7 @@ export const stats = [
 
 /* The two scrolling strips under the hero. */
 export const marquee = {
-  top: ["RAG", "KazLLM", "Llama", "FastAPI", "Django", "React", "Go", "STT / TTS", "Unreal Engine"],
+  top: ["Python", "RAG", "Llama", "KazLLM", "Claude", "FastAPI", "Django", "React", "Go", "STT / TTS", "Unreal Engine", "Docker"],
   bottom: ["Enactus World Cup Top 4", "GSEA Europe winner", "NVIDIA Inception", "Meta Llama Accelerator", "Dean's List"],
 };
 
@@ -162,10 +162,12 @@ export const awards = [
   { title: "Finalist", detail: "Meta Llama, Decentrathon, Higgsfield.ai, Mastercard & inDrive hackathons", year: "2025 — 2026" },
 ];
 
+/* Names that match a key in logos.js get their brand mark. */
 export const skills = [
   { group: "Languages", items: ["Python", "Go", "JavaScript", "Swift", "Dart"] },
+  { group: "Web & mobile", items: ["React", "Vite", "Next.js", "Vue.js", "Django", "FastAPI", "Flutter"] },
+  { group: "AI tools", items: ["Claude", "Llama", "Hugging Face", "NVIDIA", "Cursor", "Unreal Engine"] },
   { group: "AI / ML", items: ["RAG", "LLM fine-tuning", "STT / TTS", "Transformers"] },
-  { group: "Web", items: ["React", "Vite", "Next.js", "Vue.js", "Django", "FastAPI"] },
   { group: "Data & tools", items: ["PostgreSQL", "MongoDB", "SQLite", "Docker", "Git", "Figma"] },
   { group: "Product", items: ["Agile / Scrum", "Roadmapping", "Pitching", "UGC growth"] },
   { group: "Speaks", items: ["Kazakh", "Russian", "English — IELTS 7.0"] },

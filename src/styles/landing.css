@@ -656,3 +656,37 @@
 @media (prefers-reduced-motion: reduce) {
   .squiggle path { stroke-dashoffset: 0; }
 }
+
+/* ─── Brand logos (skills and marquee) ────────────────────────────────────── */
+
+.logo-badge {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.9em;
+  height: 1.9em;
+  border-radius: 30%;
+  background: #ffffff;
+}
+.logo-badge.is-dark { background: #16161d; }
+.logo-badge svg { width: 62%; height: 62%; }
+
+.skill-group .chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Chips that carry a logo tuck the badge into the pill's left edge. */
+.skill-group .chips li:has(.logo-badge) { padding-left: 5px; }
+.skill-group .logo-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+}
+
+.strip li .logo-badge {
+  width: 1.5em;
+  height: 1.5em;
+  margin-right: -14px;
+}
