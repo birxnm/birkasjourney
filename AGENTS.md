@@ -4,8 +4,8 @@ Rules for any AI coding agent working in this repository.
 
 This is the personal portfolio of Birkhanym Kazhymukhamet: a single scrollable
 landing page, built as a static site and deployed to Vercel (later to PS Cloud
-under a custom .com domain). The previous project, *Birka's Journey*, lives at
-the `birkas-journey-v1` tag.
+under a custom .com domain). The previous project, *Birka's Journey*, lives on
+the `archive/birkas-journey` branch.
 
 ## Stack
 

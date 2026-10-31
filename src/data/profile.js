@@ -81,7 +81,7 @@ export const projects = [
     period: "2026",
     role: "Solo project",
     color: "paper",
-    href: "https://github.com/birxnm/birkasjourney/tree/birkas-journey-v1",
+    href: "https://github.com/birxnm/birkasjourney/tree/archive/birkas-journey",
     summary:
       "A habit tracker with two front ends over one backend: a Telegram bot for logging on the move and a React dashboard with charts, reminders, and light/dark themes.",
     highlights: ["University final project", "Six related SQL tables, per-user isolation"],
