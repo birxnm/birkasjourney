@@ -4,7 +4,6 @@
 
 import Header from "./components/Header.jsx";
 import Hero from "./components/Hero.jsx";
-import Marquee from "./components/Marquee.jsx";
 import About from "./components/About.jsx";
 import Projects from "./components/Projects.jsx";
 import Experience from "./components/Experience.jsx";
@@ -19,7 +18,6 @@ export default function App() {
       <Header />
       <main id="main">
         <Hero />
-        <Marquee />
         <About />
         <Projects />
         <Experience />

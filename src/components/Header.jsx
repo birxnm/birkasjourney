@@ -1,20 +1,23 @@
 /*
- * Header.jsx — Sticky top bar: monogram, section links, theme toggle.
+ * Header.jsx — The three-column top line: name, role, place and year.
  *
- * On phones the links collapse behind a menu button; picking a link closes it.
+ * Section links live behind the menu button on every width, so the top line
+ * stays as calm as a title card. Picking a link closes the menu.
  */
 
 import { useState } from "react";
 
+import { person } from "../data/profile.js";
 import { useTheme } from "../hooks/useTheme.js";
 import { toggleTheme } from "../theme.js";
 
 const LINKS = [
-  { href: "#about", label: "About" },
-  { href: "#projects", label: "Projects" },
-  { href: "#experience", label: "Experience" },
-  { href: "#awards", label: "Awards" },
-  { href: "#contact", label: "Contact" },
+  { href: "#about", label: "about me" },
+  { href: "#projects", label: "projects" },
+  { href: "#experience", label: "experience" },
+  { href: "#awards", label: "awards" },
+  { href: "#skills", label: "skills" },
+  { href: "#contact", label: "let's contact" },
 ];
 
 export default function Header() {
@@ -25,17 +28,10 @@ export default function Header() {
   return (
     <header className="header">
       <div className="container header-inner">
-        <a className="logo" href="#top" aria-label="Back to top">BK</a>
-
-        <nav id="site-nav" className={`nav ${open ? "is-open" : ""}`} aria-label="Sections">
-          {LINKS.map((link) => (
-            <a key={link.href} href={link.href} onClick={() => setOpen(false)}>
-              {link.label}
-            </a>
-          ))}
-        </nav>
-
-        <div className="header-actions">
+        <a className="header-name" href="#top">{person.name}</a>
+        <span className="header-role">{person.role}</span>
+        <div className="header-end">
+          <span className="header-date">{person.location.split(",")[0]} {person.year}</span>
           <button
             className="icon-btn"
             type="button"
@@ -45,7 +41,7 @@ export default function Header() {
             <span aria-hidden="true">{goingDark ? "☾" : "☀"}</span>
           </button>
           <button
-            className="icon-btn menu-btn"
+            className="icon-btn"
             type="button"
             aria-expanded={open}
             aria-controls="site-nav"
@@ -56,6 +52,16 @@ export default function Header() {
           </button>
         </div>
       </div>
+
+      <nav id="site-nav" className={`nav ${open ? "is-open" : ""}`} aria-label="Sections">
+        <div className="container nav-inner">
+          {LINKS.map((link) => (
+            <a key={link.href} href={link.href} onClick={() => setOpen(false)}>
+              {link.label}
+            </a>
+          ))}
+        </div>
+      </nav>
     </header>
   );
 }

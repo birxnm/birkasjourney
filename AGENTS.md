@@ -11,7 +11,8 @@ the `archive/birkas-journey` branch.
 
 - React 19 + Vite, plain JSX (no TypeScript)
 - Plain CSS driven by the tokens in `src/styles/tokens.css` (no Tailwind, no CSS-in-JS)
-- `@fontsource-variable/archivo`, self-hosted
+- Fonts, self-hosted via fontsource: Caveat Brush (big titles), Patrick Hand
+  (labels, buttons), Josefin Sans (reading text, small caps)
 - No backend, no router, no UI kit, no animation library. Keep it that way unless asked.
 - `npm audit` must stay clean.
 
@@ -28,15 +29,19 @@ the `archive/birkas-journey` branch.
 ## Content rules
 
 - Facts come from the owner's CV. Never invent numbers, awards, or dates.
-- No phone number or other private details on the page — email and links only.
+- Contact details on the page are the ones the owner chose: phone, email,
+  LinkedIn, two Instagram accounts, GitHub. Add nothing else private.
 
 ## Visual rules
 
-- Flat and bright: four brand colours (`--indigo`, `--lime`, `--yellow`, `--pink`),
-  near-black chunky type, big radii. No blur, gradients, or drop shadows.
-- Text on lime/yellow/pink uses `--on-brand`; text on indigo uses `--on-indigo`.
-- Indigo as text uses `--accent` (lighter in dark mode — brand indigo fails AA there).
-- Every text pairing must clear WCAG AA in both themes.
+- A warm hand-made title card, adapted from the owner's reference slide: cream
+  paper (`--bg`, `--paper`), dusty-pink brush lettering, pink crayon scribbles
+  (`Scribble.jsx`), small spaced capitals (`.caps`). No gradients or drop shadows.
+- Pink roles: `--pink` for scribbles and fills only; `--pink-display` for brush
+  titles (3:1 on cream); `--pink-ink` for pink text at body size (AA). Text on a
+  pink fill uses `--on-pink`.
+- Light and dark themes; dark is cocoa paper with the same pink.
+- Every text pairing must clear WCAG AA in both themes (3:1 for large text).
 - Must work from 375px wide with no horizontal scroll; respect `prefers-reduced-motion`.
 
 ## Workflow

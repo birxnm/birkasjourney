@@ -8,7 +8,7 @@ import Section from "./Section.jsx";
 
 export default function Awards() {
   return (
-    <Section id="awards" eyebrow="Awards" title="Recognition.">
+    <Section id="awards" eyebrow="recognition" title="awards">
       <Reveal as="ul" className="awards">
         {awards.map((award) => (
           <li key={award.title}>

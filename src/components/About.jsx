@@ -8,7 +8,7 @@ import Section from "./Section.jsx";
 
 export default function About() {
   return (
-    <Section id="about" eyebrow="About" title="Engineer, founder, mentor.">
+    <Section id="about" eyebrow="engineer · founder · mentor" title="about me">
       <Reveal className="about">
         {about.map((paragraph) => (
           <p key={paragraph.slice(0, 24)}>{paragraph}</p>
