@@ -9,7 +9,7 @@ import Section from "./Section.jsx";
 
 export default function Skills() {
   return (
-    <Section id="skills" eyebrow="Skills" title="What I work with.">
+    <Section id="skills" eyebrow="what I work with" title="skills">
       <div className="skills">
         {skills.map((group) => (
           <Reveal key={group.group} className="skill-group">

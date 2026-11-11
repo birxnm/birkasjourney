@@ -1,64 +1,65 @@
 /*
  * tokens.css — Design tokens and base styles.
  *
- * Flat and bright: white paper, near-black chunky type, and four saturated
- * brand colours used as whole surfaces rather than accents. No blur, no
- * gradients, no drop shadows.
+ * A warm, hand-made title-card look: cream paper, dusty-pink brush lettering,
+ * pink crayon scribbles, small spaced capitals. Three typefaces, each with
+ * one job — brush script for big titles, a marker hand for labels, and a
+ * geometric sans for reading.
  *
- * Brand colours are identical in both themes; only surfaces and text flip.
- * Anything painted lime/yellow/pink takes --on-brand for its text, which stays
- * dark in both themes. Indigo surfaces take white.
+ * --pink is for scribbles and fills (2.1:1 on cream). Brush titles use
+ * --pink-display, the deepest pink that still reads as the reference while
+ * clearing 3:1 for large text; pink text at body size uses --pink-ink (AA).
+ * Text on a --pink surface uses --on-pink, which stays dark in both themes.
  */
 
-@import "@fontsource-variable/archivo/index.css";
+@import "@fontsource/caveat-brush/400.css";
+@import "@fontsource/patrick-hand/400.css";
+@import "@fontsource-variable/josefin-sans/index.css";
 
 :root {
   color-scheme: light;
 
-  --indigo: #4e55e0;
-  --lime: #b8eb6c;
-  --yellow: #f7cd63;
-  --pink: #fc8fc6;
+  --pink: #d88bb0;
+  --pink-display: #c26a97;
+  --pink-ink: #9c3d70;
+  --on-pink: #2a2326;
 
-  --bg: #ffffff;
-  --paper: #ffffff;
-  --paper-2: #f2f2f7;
-  --line: #e2e2ec;
+  --bg: #efe9df;
+  --paper: #f8f3ec;
+  --paper-2: #e6ddd0;
+  --line: #2a2326;
+  --line-soft: #d6cbbb;
 
-  --ink: #16161d;
-  --ink-muted: #5f5f6e;
-  --on-ink: #ffffff;
-  --on-brand: #16161d;
-  --on-indigo: #ffffff;
-
-  /* Indigo as text. Brand indigo is 5.8:1 on white but only 3.3:1 on the dark
-     background, so dark mode swaps in a lighter tint. */
-  --accent: #4e55e0;
-
-  /* Lime at body size on indigo — brand lime is only 4.09:1 there. */
-  --lime-soft: #d7f59b;
+  --ink: #2a2326;
+  --ink-muted: #625752;
+  --on-ink: #f8f3ec;
 
   --radius: 28px;
   --radius-sm: 16px;
   --radius-pill: 999px;
 
-  --font: "Archivo Variable", "Archivo", -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-brush: "Caveat Brush", "Segoe Script", cursive;
+  --font-hand: "Patrick Hand", "Comic Sans MS", cursive;
+  --font: "Josefin Sans Variable", "Josefin Sans", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
 }
 
+/* Dark: the same card at night — cocoa paper, the pink unchanged. */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #0e0e13;
-  --paper: #191921;
-  --paper-2: #23232e;
-  --line: #2b2b37;
+  --pink-display: #d88bb0;
+  --pink-ink: #eaa9c8;
 
-  --ink: #f2f2f7;
-  --ink-muted: #a3a3b4;
-  --on-ink: #0e0e13;
+  --bg: #211a1c;
+  --paper: #2c2326;
+  --paper-2: #382d31;
+  --line: #efe4d8;
+  --line-soft: #4a3d41;
 
-  --accent: #9da2ff;
+  --ink: #f3eae0;
+  --ink-muted: #bfb1a7;
+  --on-ink: #211a1c;
 }
 
 * {
@@ -69,33 +70,52 @@
 
 html {
   scroll-behavior: smooth;
-  /* Anchored sections land below the sticky header, not under it. */
-  scroll-padding-top: 84px;
+  scroll-padding-top: 80px;
 }
 
 body {
   min-height: 100vh;
   -webkit-text-size-adjust: 100%;
   font-family: var(--font);
+  font-size: 1.05rem;
   color: var(--ink);
   background: var(--bg);
-  line-height: 1.55;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.2s, color 0.2s;
 }
 
 h1, h2, h3 {
-  line-height: 1.08;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-weight: 700;
 }
 
 a { color: inherit; }
 
 ul, ol { list-style: none; }
 
+/* The three type roles, usable on any element. */
+.brush {
+  font-family: var(--font-brush);
+  font-weight: 400;
+  line-height: 0.9;
+  color: var(--pink-display);
+  letter-spacing: 0.01em;
+}
+.hand {
+  font-family: var(--font-hand);
+  font-weight: 400;
+}
+.caps {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  line-height: 1.8;
+  text-transform: uppercase;
+}
+
 :focus-visible {
-  outline: 3px solid var(--accent);
+  outline: 3px solid var(--pink-ink);
   outline-offset: 3px;
   border-radius: 6px;
 }

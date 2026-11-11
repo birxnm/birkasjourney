@@ -11,31 +11,34 @@ export const person = {
   short: "Birka",
   role: "Software engineer & AI builder",
   location: "Astana, Kazakhstan",
+  year: "2026",
   tagline:
     "I build AI products for Kazakhstan — from RAG pipelines and Kazakh-speaking avatars to full-stack platforms — and take them from a hackathon idea to a global stage.",
   email: "k.birkhanym@gmail.com",
-  /* File in public/, prefixed with the build base. null shows the BK monogram instead. */
-  photo: `${import.meta.env.BASE_URL}photo.jpg`,
-  links: [
-    { label: "LinkedIn", href: "https://www.linkedin.com/in/birkhanym-kazhymukhamet-668261337/" },
-    { label: "GitHub", href: "https://github.com/birxnm" },
-    { label: "Email", href: "mailto:k.birkhanym@gmail.com" },
+  phone: "+7 700 141 0206",
+  /* Files in public/, prefixed with the build base so a subfolder deploy works.
+     Swap photoHero for a transparent PNG to get the cut-out look. */
+  photoHero: `${import.meta.env.BASE_URL}photo-hero.jpg`,
+  photoSmall: `${import.meta.env.BASE_URL}photo-small.jpg`,
+  /* Shown in the contact block, in this order. */
+  contacts: [
+    { label: "+7 700 141 0206", href: "tel:+77001410206" },
+    { label: "k.birkhanym@gmail.com", href: "mailto:k.birkhanym@gmail.com" },
+    { label: "linkedin / Birkhanym Kazhymukhamet", href: "https://www.linkedin.com/in/birkhanym-kazhymukhamet-668261337/" },
+    { label: "@birxnm", href: "https://www.instagram.com/birxnm/" },
+    { label: "@1xnym_", href: "https://www.instagram.com/1xnym_/" },
+    { label: "github / birxnm", href: "https://github.com/birxnm" },
   ],
+  github: "https://github.com/birxnm",
 };
 
 /* The four headline numbers under the hero. */
 export const stats = [
-  { value: "1 / 6,000", label: "Top student, Astana IT University 2026", color: "lime" },
-  { value: "Top 4", label: "Enactus World Cup — first KZ team in 30 years", color: "yellow" },
-  { value: "2 / 1,800", label: "Meta Llama Accelerator teams", color: "pink" },
-  { value: "12 h → 10 s", label: "Clinical decision time with CortexAI", color: "indigo" },
+  { value: "1 / 6,000", label: "Top student, Astana IT University 2026" },
+  { value: "Top 4", label: "Enactus World Cup — first KZ team in 30 years" },
+  { value: "2 / 1,800", label: "Meta Llama Accelerator teams" },
+  { value: "12 h → 10 s", label: "Clinical decision time with CortexAI" },
 ];
-
-/* The two scrolling strips under the hero. */
-export const marquee = {
-  top: ["Python", "RAG", "Llama", "KazLLM", "Claude", "FastAPI", "Django", "React", "Go", "STT / TTS", "Unreal Engine", "Docker"],
-  bottom: ["Enactus World Cup Top 4", "GSEA Europe winner", "NVIDIA Inception", "Meta Llama Accelerator", "Dean's List"],
-};
 
 export const about = [
   "I'm a Software Engineering student at Astana IT University with a minor in Finance (GPA 3.67/4.00, Dean's List) and a resident of Tomorrow School's AI Developer & Engineering program at Astana Hub.",
@@ -47,7 +50,7 @@ export const projects = [
     name: "CortexAI",
     period: "2024 — now",
     role: "CPO & AI Engineer",
-    color: "lime",
+    color: "pink",
     summary:
       "An ML platform that predicts kidney transplant rejection from genetic profiling and clinical biomarkers. RAG pipelines cut clinical decision time from 12 hours to 10 seconds.",
     highlights: ["Top 4, Enactus World Cup 2025", "NVIDIA Inception — Top 3 of 80", "GSEA World Finalist", "Featured by Digital Kazakhstan"],
@@ -57,7 +60,7 @@ export const projects = [
     name: "Back2Roots",
     period: "2025",
     role: "Founder & Full-Stack Developer",
-    color: "yellow",
+    color: "paper",
     summary:
       "An AI tourism platform with a digital avatar city guide built on Llama and KazLLM, using a RAG architecture with real-time speech in and out.",
     highlights: ["2nd of 1,800 teams, Meta Llama Accelerator", "500,000 KZT prize"],
@@ -67,7 +70,7 @@ export const projects = [
     name: "QazaqArt.kz",
     period: "2025 — now",
     role: "CTO & IT Lead",
-    color: "pink",
+    color: "ink",
     href: "https://qazaqart.kz",
     summary:
       "A creative ecosystem that helps Kazakh artists build sustainable businesses. I lead the platform, including creator portfolios and the artwork gallery.",
@@ -78,7 +81,7 @@ export const projects = [
     name: "Kazakh holographic AI avatar",
     period: "2024 — 2025",
     role: "Research Assistant, IEEE Student Branch",
-    color: "indigo",
+    color: "pink",
     summary:
       "A Kazakh-speaking holographic avatar for VR education. I built MetaHuman characters with Audio2Face animation in Unreal Engine and wired in Kazakh STT/TTS and a document Q&A module.",
     highlights: ["Only first-year student on the team", "IEEE paper in progress"],

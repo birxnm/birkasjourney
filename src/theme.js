@@ -36,7 +36,7 @@ function apply(theme) {
   // Keeps the mobile browser chrome in step with the page.
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute("content", theme === "dark" ? "#0e0e13" : "#ffffff");
+    ?.setAttribute("content", theme === "dark" ? "#211a1c" : "#efe9df");
 }
 
 apply(current);

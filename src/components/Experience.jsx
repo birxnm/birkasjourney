@@ -8,7 +8,7 @@ import Section from "./Section.jsx";
 
 export default function Experience() {
   return (
-    <Section id="experience" eyebrow="Experience" title="Where I've worked.">
+    <Section id="experience" eyebrow="where I've worked" title="experience">
       <ol className="timeline">
         {experience.map((job) => (
           <Reveal as="li" key={`${job.org}-${job.role}`} className="timeline-item">

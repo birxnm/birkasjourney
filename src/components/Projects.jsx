@@ -154,8 +154,8 @@ export default function Projects() {
       <div className="projects-sticky">
         <div className="container projects-head">
           <div>
-            <p className="eyebrow">Projects</p>
-            <h2 id="projects-title">Things I've built.</h2>
+            <p className="eyebrow">things I've built</p>
+            <h2 id="projects-title" className="brush">my projects</h2>
           </div>
           <div className="projects-meter">
             <div className="projects-nav">
@@ -189,9 +189,9 @@ export default function Projects() {
               </li>
             ))}
             <li className="projects-slide projects-end" onFocusCapture={onCardFocus(projects.length)}>
-              <a href={person.links.find((link) => link.label === "GitHub")?.href} target="_blank" rel="noreferrer">
-                <span className="end-kicker">That's not all</span>
-                <span className="end-title">More on GitHub</span>
+              <a href={person.github} target="_blank" rel="noreferrer">
+                <span className="end-kicker caps">that's not all</span>
+                <span className="end-title brush">more on github</span>
                 <span className="end-arrow" aria-hidden="true">→</span>
               </a>
             </li>
