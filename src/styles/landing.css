@@ -201,15 +201,20 @@
   max-width: 440px;
   justify-self: center;
 }
-.hero-photo img {
+.hero-photo .cutout {
   position: relative;
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-  /* An arch, like a cut-out pinned to the card. */
-  border-radius: 999px 999px 28px 28px;
+  rotate: -2deg;
+}
+
+/* The paper border round a cut-out photo: cream in both themes, like a sticker. */
+.cutout { overflow: visible; }
+.cutout-border {
+  fill: #f8f3ec;
+  stroke: #f8f3ec;
+  stroke-linejoin: round;
 }
 
 .hero-scribble-a {
@@ -659,10 +664,9 @@
 }
 
 .contact-photo {
-  width: 180px;
-  height: 180px;
-  object-fit: cover;
-  rotate: -3deg;
+  width: 220px;
+  height: auto;
+  rotate: -4deg;
 }
 
 .contact-list {

@@ -16,10 +16,6 @@ export const person = {
     "I build AI products for Kazakhstan — from RAG pipelines and Kazakh-speaking avatars to full-stack platforms — and take them from a hackathon idea to a global stage.",
   email: "k.birkhanym@gmail.com",
   phone: "+7 700 141 0206",
-  /* Files in public/, prefixed with the build base so a subfolder deploy works.
-     Swap photoHero for a transparent PNG to get the cut-out look. */
-  photoHero: `${import.meta.env.BASE_URL}photo-hero.jpg`,
-  photoSmall: `${import.meta.env.BASE_URL}photo-small.jpg`,
   /* Shown in the contact block, in this order. */
   contacts: [
     { label: "+7 700 141 0206", href: "tel:+77001410206" },

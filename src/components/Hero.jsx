@@ -1,5 +1,5 @@
 /*
- * Hero.jsx — The title card: arched photo with crayon scribbles, a giant
+ * Hero.jsx — The title card: a cut-out photo with crayon scribbles, a giant
  * brush-script greeting that overlaps it, a small-caps intro, and the
  * headline numbers.
  *
@@ -8,6 +8,8 @@
  */
 
 import { person, stats } from "../data/profile.js";
+import { CUTOUTS } from "../data/cutouts.js";
+import CutoutPhoto from "./CutoutPhoto.jsx";
 import Reveal from "./Reveal.jsx";
 import Scribble from "./Scribble.jsx";
 
@@ -20,7 +22,7 @@ export default function Hero() {
         <div className="hero-photo">
           <Scribble variant="zigzag" className="hero-scribble-a" />
           <Scribble variant="loops" className="hero-scribble-b" />
-          <img src={person.photoHero} alt={person.name} width="640" height="800" />
+          <CutoutPhoto cutout={CUTOUTS.hero} alt={person.name} />
         </div>
 
         <div className="hero-copy">

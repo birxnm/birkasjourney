@@ -5,6 +5,8 @@
  */
 
 import { person } from "../data/profile.js";
+import { CUTOUTS } from "../data/cutouts.js";
+import CutoutPhoto from "./CutoutPhoto.jsx";
 import Reveal from "./Reveal.jsx";
 import Scribble from "./Scribble.jsx";
 
@@ -23,7 +25,7 @@ export default function Contact() {
           </p>
 
           <div className="contact-row">
-            <img src={person.photoSmall} alt="" width="420" height="420" className="contact-photo" />
+            <CutoutPhoto cutout={CUTOUTS.small} alt="" className="contact-photo" />
             <ul className="contact-list">
               {person.contacts.map((contact) => (
                 <li key={contact.href}>
