@@ -1,15 +1,15 @@
 /*
  * tokens.css — Design tokens and base styles.
  *
- * A warm, hand-made title-card look: cream paper, dusty-pink brush lettering,
- * pink crayon scribbles, small spaced capitals. Three typefaces, each with
- * one job — brush script for big titles, a marker hand for labels, and a
- * geometric sans for reading.
+ * A hand-made title-card look in blue: white paper and a clear blue in the
+ * light theme, deep navy and white in the dark one. Brush lettering, crayon
+ * scribbles, small spaced capitals. Three typefaces, each with one job —
+ * brush script for big titles, a marker hand for labels, and a geometric
+ * sans for reading.
  *
- * --pink is for scribbles and fills (2.1:1 on cream). Brush titles use
- * --pink-display, the deepest pink that still reads as the reference while
- * clearing 3:1 for large text; pink text at body size uses --pink-ink (AA).
- * Text on a --pink surface uses --on-pink, which stays dark in both themes.
+ * Accent roles: --accent for scribbles and filled surfaces (white text on it
+ * via --on-accent); --accent-display for brush titles; --accent-ink for
+ * accent-coloured text at body size. All clear AA in both themes.
  */
 
 @import "@fontsource/caveat-brush/400.css";
@@ -19,20 +19,22 @@
 :root {
   color-scheme: light;
 
-  --pink: #d88bb0;
-  --pink-display: #c26a97;
-  --pink-ink: #9c3d70;
-  --on-pink: #2a2326;
+  --accent: #2f62ea;
+  --accent-display: #2557e0;
+  --accent-ink: #1d47c8;
+  --on-accent: #ffffff;
+  /* The border round cut-out photos: pale blue, since white vanishes on white. */
+  --sticker: #e3eaff;
 
-  --bg: #efe9df;
-  --paper: #f8f3ec;
-  --paper-2: #e6ddd0;
-  --line: #2a2326;
-  --line-soft: #d6cbbb;
+  --bg: #ffffff;
+  --paper: #f3f6ff;
+  --paper-2: #e3eaff;
+  --line: #0f1b3d;
+  --line-soft: #d8e0f5;
 
-  --ink: #2a2326;
-  --ink-muted: #625752;
-  --on-ink: #f8f3ec;
+  --ink: #0f1b3d;
+  --ink-muted: #4a5578;
+  --on-ink: #ffffff;
 
   --radius: 28px;
   --radius-sm: 16px;
@@ -44,22 +46,34 @@
     "Segoe UI", Roboto, sans-serif;
 }
 
-/* Dark: the same card at night — cocoa paper, the pink unchanged. */
+/* Dark: deep navy with white lettering and a lighter blue for scribbles. */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --pink-display: #d88bb0;
-  --pink-ink: #eaa9c8;
+  --accent: #7fa2ff;
+  --accent-display: #ffffff;
+  --accent-ink: #a9c1ff;
+  --sticker: #ffffff;
 
-  --bg: #211a1c;
-  --paper: #2c2326;
-  --paper-2: #382d31;
-  --line: #efe4d8;
-  --line-soft: #4a3d41;
+  --bg: #0b1530;
+  --paper: #13214a;
+  --paper-2: #1c2d5e;
+  --line: #e8eeff;
+  --line-soft: #263a70;
 
-  --ink: #f3eae0;
-  --ink-muted: #bfb1a7;
-  --on-ink: #211a1c;
+  --ink: #ffffff;
+  --ink-muted: #b8c3e0;
+  --on-ink: #0b1530;
+}
+
+/* In dark, filled surfaces keep the light theme's deeper blue so white text
+   on them still clears AA; the lighter --accent is for scribbles only. */
+:root[data-theme="dark"] .tone-accent,
+:root[data-theme="dark"] .award-year,
+:root[data-theme="dark"] .btn-ghost:hover,
+:root[data-theme="dark"] .icon-btn:hover,
+:root[data-theme="dark"] .projects-end a:hover {
+  --accent: #2f62ea;
 }
 
 * {
@@ -99,7 +113,7 @@ ul, ol { list-style: none; }
   font-family: var(--font-brush);
   font-weight: 400;
   line-height: 0.9;
-  color: var(--pink-display);
+  color: var(--accent-display);
   letter-spacing: 0.01em;
 }
 .hand {
@@ -115,7 +129,7 @@ ul, ol { list-style: none; }
 }
 
 :focus-visible {
-  outline: 3px solid var(--pink-ink);
+  outline: 3px solid var(--accent-ink);
   outline-offset: 3px;
   border-radius: 6px;
 }

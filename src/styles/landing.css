@@ -75,7 +75,7 @@
 }
 .scribble path {
   fill: none;
-  stroke: var(--pink);
+  stroke: var(--accent);
   stroke-width: 7;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -109,7 +109,7 @@
 
 .btn-primary { background: var(--ink); color: var(--on-ink); }
 .btn-ghost { color: var(--ink); }
-.btn-ghost:hover { background: var(--pink); border-color: var(--pink); color: var(--on-pink); }
+.btn-ghost:hover { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
 .icon-btn {
   display: inline-grid;
@@ -123,7 +123,7 @@
   font-size: 1.1rem;
   cursor: pointer;
 }
-.icon-btn:hover { background: var(--pink); border-color: var(--pink); color: var(--on-pink); }
+.icon-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
 /* ─── Header: name · role · place and year ────────────────────────────────── */
 
@@ -177,7 +177,7 @@
   font-family: var(--font-brush);
   font-size: clamp(2rem, 5vw, 2.8rem);
   line-height: 1.2;
-  color: var(--pink-ink);
+  color: var(--accent-ink);
   text-decoration: none;
 }
 .nav a:hover { color: var(--ink); }
@@ -209,11 +209,11 @@
   rotate: -2deg;
 }
 
-/* The paper border round a cut-out photo: cream in both themes, like a sticker. */
+/* The paper border round a cut-out photo: white in both themes, like a sticker. */
 .cutout { overflow: visible; }
 .cutout-border {
-  fill: #f8f3ec;
-  stroke: #f8f3ec;
+  fill: var(--sticker);
+  stroke: var(--sticker);
   stroke-linejoin: round;
 }
 
@@ -291,7 +291,7 @@
 .stat strong {
   font-size: clamp(2rem, 3.5vw, 2.6rem);
   line-height: 1;
-  color: var(--pink-ink);
+  color: var(--accent-ink);
 }
 
 @media (max-width: 520px) {
@@ -300,7 +300,7 @@
 
 /* ─── Card tones (project cards) ──────────────────────────────────────────── */
 
-.tone-pink  { background: var(--pink);  color: var(--on-pink); border-color: var(--pink); }
+.tone-accent  { background: var(--accent);  color: var(--on-accent); border-color: var(--accent); }
 .tone-paper { background: var(--paper); color: var(--ink);     border-color: var(--line); }
 .tone-ink   { background: var(--ink);   color: var(--on-ink);  border-color: var(--ink); }
 
@@ -366,7 +366,7 @@
 .projects-bar span {
   display: block;
   height: 100%;
-  background: var(--pink);
+  background: var(--accent);
   transform-origin: left;
 }
 
@@ -475,8 +475,8 @@
   text-decoration: none;
   transition: background-color 0.2s, color 0.2s;
 }
-.projects-end a:hover { background: var(--pink); color: var(--on-pink); border-color: var(--pink); }
-.projects-end a:hover .end-title { color: var(--on-pink); }
+.projects-end a:hover { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.projects-end a:hover .end-title { color: var(--on-accent); }
 .end-title { font-size: clamp(3rem, 5vw, 4rem); }
 .end-arrow {
   font-family: var(--font-hand);
@@ -518,7 +518,7 @@
 .timeline-when {
   font-family: var(--font-hand);
   font-size: 1.25rem;
-  color: var(--pink-ink);
+  color: var(--accent-ink);
 }
 
 .timeline-body h3 { font-size: 1.3rem; margin-bottom: 10px; }
@@ -530,7 +530,7 @@
   position: absolute;
   left: 0;
   font-size: 0.8em;
-  color: var(--pink);
+  color: var(--accent);
 }
 
 @media (max-width: 640px) {
@@ -558,8 +558,8 @@
   flex-shrink: 0;
   padding: 4px 14px 2px;
   border-radius: var(--radius-pill);
-  background: var(--pink);
-  color: var(--on-pink);
+  background: var(--accent);
+  color: var(--on-accent);
   font-family: var(--font-hand);
   font-size: 1.1rem;
 }
@@ -586,7 +586,7 @@
   font-family: var(--font-brush);
   font-weight: 400;
   font-size: 2.2rem;
-  color: var(--pink-ink);
+  color: var(--accent-ink);
 }
 
 .logo-badge {
@@ -681,7 +681,7 @@
   overflow-wrap: anywhere;
 }
 .contact-list a:hover {
-  color: var(--pink-ink);
+  color: var(--accent-ink);
   text-decoration: underline;
   text-underline-offset: 4px;
 }

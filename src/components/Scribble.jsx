@@ -1,5 +1,6 @@
 /*
- * Scribble.jsx — A pink crayon scribble that draws itself once in view.
+ * Scribble.jsx — A crayon scribble in the accent colour that draws itself
+ * once in view.
  *
  * The rough crayon edge is an SVG turbulence filter displacing a plain
  * stroke; the drawing is a dash offset animated from 1 to 0 (pathLength=1

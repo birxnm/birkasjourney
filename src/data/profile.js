@@ -46,7 +46,7 @@ export const projects = [
     name: "CortexAI",
     period: "2024 — now",
     role: "CPO & AI Engineer",
-    color: "pink",
+    color: "accent",
     summary:
       "An ML platform that predicts kidney transplant rejection from genetic profiling and clinical biomarkers. RAG pipelines cut clinical decision time from 12 hours to 10 seconds.",
     highlights: ["Top 4, Enactus World Cup 2025", "NVIDIA Inception — Top 3 of 80", "GSEA World Finalist", "Featured by Digital Kazakhstan"],
@@ -77,7 +77,7 @@ export const projects = [
     name: "Kazakh holographic AI avatar",
     period: "2024 — 2025",
     role: "Research Assistant, IEEE Student Branch",
-    color: "pink",
+    color: "accent",
     summary:
       "A Kazakh-speaking holographic avatar for VR education. I built MetaHuman characters with Audio2Face animation in Unreal Engine and wired in Kazakh STT/TTS and a document Q&A module.",
     highlights: ["Only first-year student on the team", "IEEE paper in progress"],

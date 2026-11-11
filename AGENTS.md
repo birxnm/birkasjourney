@@ -34,13 +34,14 @@ the `archive/birkas-journey` branch.
 
 ## Visual rules
 
-- A warm hand-made title card, adapted from the owner's reference slide: cream
-  paper (`--bg`, `--paper`), dusty-pink brush lettering, pink crayon scribbles
-  (`Scribble.jsx`), small spaced capitals (`.caps`). No gradients or drop shadows.
-- Pink roles: `--pink` for scribbles and fills only; `--pink-display` for brush
-  titles (3:1 on cream); `--pink-ink` for pink text at body size (AA). Text on a
-  pink fill uses `--on-pink`.
-- Light and dark themes; dark is cocoa paper with the same pink.
+- A hand-made title card in blue, adapted from the owner's reference slide:
+  white and a clear blue in light mode, deep navy and white in dark mode.
+  Brush lettering, crayon scribbles (`Scribble.jsx`), small spaced capitals
+  (`.caps`), photos cut out along traced outlines (`CutoutPhoto.jsx`). No
+  gradients or drop shadows.
+- Accent roles: `--accent` for scribbles and filled surfaces (white text via
+  `--on-accent`); `--accent-display` for brush titles; `--accent-ink` for
+  accent text at body size.
 - Every text pairing must clear WCAG AA in both themes (3:1 for large text).
 - Must work from 375px wide with no horizontal scroll; respect `prefers-reduced-motion`.
 
